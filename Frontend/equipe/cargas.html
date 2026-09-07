@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="../img/simple-logo.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unitrans · Cargas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Font Awesome 6 (Free) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="../shared/css/ui.css">
+<style>
+  /* ---------- Ajustes específicos da listagem em tabela com dropdown ---------- */
+  .carga-row{cursor:pointer;}
+  .carga-row td{white-space:nowrap;}
+  .btn-toggle-carga i{transition:transform .15s ease;}
+  .btn-toggle-carga.open i{transform:rotate(90deg);}
+  .carga-sub-row td{padding:0;background:#FAFAF8;}
+  .carga-sub-row.hidden{display:none;}
+  .sub-table-wrap{padding:6px 20px 18px 56px;}
+  .sub-table-wrap table{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:12.5px;}
+  .sub-table-wrap thead th{background:#F2F1EC;padding:9px 14px;}
+  .sub-table-wrap tbody td{padding:10px 14px;}
+  .sub-table-empty{padding:16px 14px;color:var(--ink-faint);font-size:12.5px;background:#fff;border:1px solid var(--line);border-radius:8px;}
+  .uso-pill{white-space:nowrap;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="sidebar-mount"></div>
+  <script src="../shared/js/sidebar-engine.js"></script>
+  <script src="js/sidebar.js"></script>
+
+  <div class="main">
+    <div class="page active" id="page-cargas">
+
+      <div class="topbar">
+        <div>
+          <div class="page-title">Cargas</div>
+          <div class="page-date">Agrupamento de solicitações para montagem de rota</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-amber" id="btnMontarCarga">
+            <i class="fas fa-route"></i>
+            Montar carga
+          </button>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="panel">
+          <!-- Toolbar de filtros -->
+          <div class="toolbar" id="filterToolbarCargas" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <span class="chip active" data-filter="all">Todas · <span id="filterCountAllCargas">0</span></span>
+            <span class="chip" data-filter="montagem">Em montagem · <span id="filterCountMontagemCargas">0</span></span>
+            <span class="chip" data-filter="rota">Em rota · <span id="filterCountRotaCargas">0</span></span>
+            <div style="display:flex;align-items:center;gap:6px;margin-left:auto;background:var(--bg-elevated);padding:4px 12px 4px 8px;border-radius:8px;border:1px solid var(--line);">
+              <span style="font-size:13px;color:var(--ink-soft);"><i class="far fa-calendar-alt"></i> Data:</span>
+              <select id="filterDataCargas" style="border:none;background:transparent;padding:4px 0;font-family:var(--font);font-size:13px;color:var(--ink);outline:none;cursor:pointer;">
+                <option value="all">Todas as datas</option>
+                <option value="25/08">25/08</option>
+                <option value="26/08">26/08</option>
+                <option value="27/08">27/08</option>
+              </select>
+              <button id="limparDataCargas" style="background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:14px;padding:0 4px;" title="Limpar filtro de data">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th style="width:36px;"></th>
+                <th>Carga</th>
+                <th>Dia</th>
+                <th>Caminhão</th>
+                <th>Motorista</th>
+                <th>Usado / Capacidade</th>
+                <th>Status</th>
+                <th style="width:150px;"></th>
+              </tr>
+            </thead>
+            <tbody id="cargasTabela">
+              <tr><td colspan="9" style="text-align:center;color:var(--ink-faint);">Carregando cargas…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Montar / editar carga -->
+<div class="modal-overlay" id="modalMontarOverlay">
+  <div class="modal" style="max-width:780px;">
+    <button class="modal-close" id="fecharModalMontar" type="button" aria-label="Fechar">
+      <i class="fas fa-times"></i>
+    </button>
+
+    <div class="progress" style="max-width:360px;margin-left:auto;margin-right:auto;">
+      <div class="progress-step" data-progress-step="1"><div class="bar"></div><div class="circle">1</div><div class="label">Caminhão</div></div>
+      <div class="progress-step" data-progress-step="2"><div class="bar"></div><div class="circle">2</div><div class="label">Solicitações</div></div>
+    </div>
+
+    <!-- Passo 1: dia + caminhão -->
+    <div class="wstep" data-step="1">
+      <div class="step-head">
+        <div class="step-title">
+          <i class="fas fa-truck" style="margin-right:8px;"></i>
+          Selecionar caminhão
+        </div>
+        <div class="step-sub">Escolha o dia da carga e um caminhão disponível.</div>
+      </div>
+      <div class="day-tabs" id="montarDayTabs" style="margin-bottom:16px;"></div>
+      <div class="truck-select-grid" id="truckSelectGrid">
+        <div class="truck-empty">Carregando caminhões…</div>
+      </div>
+      <div class="wizard-nav">
+        <div class="wnav-spacer"></div>
+        <button type="button" class="btn btn-amber" id="btnAvancarMontar" disabled>
+          Avançar <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Passo 2: solicitações -->
+    <div class="wstep" data-step="2">
+      <div class="step-head">
+        <div class="step-title">
+          <i class="fas fa-list-check" style="margin-right:8px;"></i>
+          Selecionar solicitações
+        </div>
+        <div class="step-sub" id="montarStep2Sub">Itens da mesma região são pré-selecionados conforme a capacidade do caminhão.</div>
+      </div>
+
+      <div class="montar-summary" id="montarSummary"></div>
+      <div class="montar-warnings" id="montarWarnings"></div>
+
+      <div class="montar-pools">
+        <div class="pool-panel">
+          <div class="pool-panel-head">
+            <span class="tag-coleta"><i class="fas fa-arrow-up"></i> Coletas do dia</span>
+            <span class="pool-count" id="montarCountColeta">0</span>
+          </div>
+          <div class="pool-list" id="montarPoolColeta"></div>
+        </div>
+        <div class="pool-panel">
+          <div class="pool-panel-head">
+            <span class="tag-entrega"><i class="fas fa-arrow-down"></i> Entregas do dia</span>
+            <span class="pool-count" id="montarCountEntrega">0</span>
+          </div>
+          <div class="pool-list" id="montarPoolEntrega"></div>
+        </div>
+      </div>
+
+      <div class="wizard-nav">
+        <button type="button" class="btn btn-ghost" id="btnVoltarMontar">
+          <i class="fas fa-arrow-left"></i> Voltar
+        </button>
+        <div class="wnav-spacer"></div>
+        <button type="button" class="btn btn-amber" id="btnConcluirMontar" disabled>
+          <i class="fas fa-check"></i> Concluir criação da carga
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Editar carga (tela única — diferente do wizard de montagem) -->
+<div class="modal-overlay" id="modalEditarOverlay">
+  <div class="modal" style="max-width:780px;">
+    <button class="modal-close" id="fecharModalEditar" type="button" aria-label="Fechar">
+      <i class="fas fa-times"></i>
+    </button>
+
+    <div class="step-head">
+      <div class="step-title" id="editarTitulo">
+        <i class="fas fa-edit" style="margin-right:8px;"></i>
+        Editar carga
+      </div>
+      <div class="step-sub" id="editarSub">—</div>
+    </div>
+
+    <div class="field-grid" style="margin-bottom:18px;">
+      <div class="field full">
+        <label for="editarCaminhaoSelect">Caminhão</label>
+        <select id="editarCaminhaoSelect"></select>
+      </div>
+    </div>
+
+    <div class="montar-summary" id="editarSummary"></div>
+    <div class="montar-warnings" id="editarWarnings"></div>
+
+    <div class="montar-pools">
+      <div class="pool-panel">
+        <div class="pool-panel-head">
+          <span class="tag-coleta"><i class="fas fa-arrow-up"></i> Coletas do dia</span>
+          <span class="pool-count" id="editarCountColeta">0</span>
+        </div>
+        <div class="pool-list" id="editarPoolColeta"></div>
+      </div>
+      <div class="pool-panel">
+        <div class="pool-panel-head">
+          <span class="tag-entrega"><i class="fas fa-arrow-down"></i> Entregas do dia</span>
+          <span class="pool-count" id="editarCountEntrega">0</span>
+        </div>
+        <div class="pool-list" id="editarPoolEntrega"></div>
+      </div>
+    </div>
+
+    <div class="wizard-nav">
+      <button type="button" class="btn btn-ghost" id="btnCancelarEditar">
+        <i class="fas fa-times"></i> Cancelar
+      </button>
+      <div class="wnav-spacer"></div>
+      <button type="button" class="btn btn-amber" id="btnSalvarEditar" disabled>
+        <i class="fas fa-save"></i> Salvar alterações
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Gerar rota (confirmar motorista) -->
+<div class="modal-overlay" id="modalAtribuirOverlay">
+  <div class="modal" style="max-width:440px;">
+    <button class="modal-close" id="fecharModalAtribuir" type="button" aria-label="Fechar">
+      <i class="fas fa-times"></i>
+    </button>
+    <div class="step-head">
+      <div class="step-title">
+        <i class="fas fa-route" style="margin-right:8px;"></i>
+        Gerar rota
+      </div>
+      <div class="step-sub">Confirme o motorista que vai rodar esta carga.</div>
+    </div>
+    <form id="formAtribuir" novalidate>
+      <div class="field-grid">
+        <div class="field full">
+          <label>Caminhão</label>
+          <div class="readonly-box" id="atribuirCaminhaoLabel">—</div>
+        </div>
+        <div class="field full" data-field="motorista">
+          <label for="selectMotorista">Motorista</label>
+          <select id="selectMotorista"><option value="">Selecione…</option></select>
+          <div class="error-text">Selecione um motorista.</div>
+        </div>
+      </div>
+      <div class="wizard-nav">
+        <div class="wnav-spacer"></div>
+        <button type="submit" class="btn btn-amber">
+          <i class="fas fa-check"></i> Confirmar e gerar rota
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="../shared/js/ui.js"></script>
+<script src="../shared/js/utils.js"></script>
+<script src="js/app.js"></script>
+<script src="js/cargas.js"></script>
+</body>
+</html>

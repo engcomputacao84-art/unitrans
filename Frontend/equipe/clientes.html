@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="../img/simple-logo.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unitrans · Clientes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Font Awesome 6 (Free) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="../shared/css/ui.css">
+</head>
+<body>
+<div class="app">
+  <div id="sidebar-mount"></div>
+  <script src="../shared/js/sidebar-engine.js"></script>
+  <script src="js/sidebar.js"></script>
+
+  <div class="main">
+    <div class="page active" id="page-clientes">
+
+      <div class="topbar">
+        <div>
+          <div class="page-title">Clientes</div>
+          <div class="page-date">Cadastro de clientes atendidos pela Unitrans</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-amber" id="btnNovoCliente" type="button">
+            <i class="fas fa-plus"></i>
+            Novo cliente
+          </button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="panel">
+          <table>
+            <thead><tr><th>Cliente</th><th>Documento</th><th>Telefone</th><th>Endereço principal</th><th>Solicitações</th><th></th></tr></thead>
+            <tbody id="tabelaClientes">
+              <tr>
+                <td class="cell-strong">Metalúrgica Rio Preto Ltda</td>
+                <td class="mono">04.512.887/0001-30</td>
+                <td class="mono">(17) 3422-1190</td>
+                <td>Av. Prestes Maia, 1840 — Centro</td>
+                <td>27</td>
+                <td><div class="row-actions"><div class="icon-btn"><i class="fas fa-chevron-right"></i></div></div></td>
+              </tr>
+              <tr>
+                <td class="cell-strong">Farmácia Bem-Estar</td>
+                <td class="mono">21.884.310/0001-08</td>
+                <td class="mono">(17) 3421-7765</td>
+                <td>Rua Amazonas, 522 — Vila Marin</td>
+                <td>12</td>
+                <td><div class="row-actions"><div class="icon-btn"><i class="fas fa-chevron-right"></i></div></div></td>
+              </tr>
+              <tr>
+                <td class="cell-strong">Distribuidora Noroeste</td>
+                <td class="mono">09.221.554/0001-71</td>
+                <td class="mono">(17) 3425-0044</td>
+                <td>Rod. Euclides da Cunha, km 431</td>
+                <td>41</td>
+                <td><div class="row-actions"><div class="icon-btn"><i class="fas fa-chevron-right"></i></div></div></td>
+              </tr>
+              <tr>
+                <td class="cell-strong">Clínica VidaPlus</td>
+                <td class="mono">33.117.902/0001-55</td>
+                <td class="mono">(17) 3422-8830</td>
+                <td>Av. Onze de Agosto, 2140</td>
+                <td>8</td>
+                <td><div class="row-actions"><div class="icon-btn"><i class="fas fa-chevron-right"></i></div></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Modal: Cadastro de Cliente (Wizard) ===================== -->
+<div class="modal-overlay" id="modalCliente">
+  <div class="modal" style="max-width:660px;">
+    <button class="modal-close" id="btnFecharModalCliente" type="button" aria-label="Fechar">
+      <i class="fas fa-times"></i>
+    </button>
+
+    <div class="wizard-card" id="wizardCardCliente">
+      <!-- Progresso -->
+      <div class="progress">
+        <div class="progress-step" data-step="1">
+          <div class="bar"></div>
+          <div class="circle">1</div>
+          <div class="label">Tipo de pessoa</div>
+        </div>
+        <div class="progress-step" data-step="2">
+          <div class="bar"></div>
+          <div class="circle">2</div>
+          <div class="label">Identificação</div>
+        </div>
+        <div class="progress-step" data-step="3">
+          <div class="bar"></div>
+          <div class="circle">3</div>
+          <div class="label">Contato</div>
+        </div>
+        <div class="progress-step" data-step="4">
+          <div class="bar"></div>
+          <div class="circle">4</div>
+          <div class="label">Endereço</div>
+        </div>
+        <div class="progress-step" data-step="5">
+          <div class="bar"></div>
+          <div class="circle">5</div>
+          <div class="label">Controle</div>
+        </div>
+      </div>
+
+      <form id="formCliente" novalidate>
+
+        <!-- ETAPA 1: Tipo de pessoa -->
+        <div class="wstep" data-step="1">
+          <div class="step-head">
+            <div class="step-title">
+              <i class="fas fa-users" style="margin-right:8px;"></i>
+              Tipo de pessoa
+            </div>
+            <div class="step-sub">Selecione se o cliente é pessoa física ou jurídica.</div>
+          </div>
+          <div class="tipo-pessoa-grid">
+            <label class="tipo-pessoa-card" id="cardPF" for="tipoPF"><span class="tp-radio"></span>
+              <span class="tp-icon"><i class="fas fa-user"></i></span>
+              <span>
+                <span class="tp-label" style="display:block;">Pessoa Física</span>
+                <span class="tp-sub">CPF</span>
+              </span>
+              <input type="radio" name="tipoPessoa" id="tipoPF" value="PF" style="display:none;">
+            </label>
+            <label class="tipo-pessoa-card" id="cardPJ" for="tipoPJ"><span class="tp-radio"></span>
+              <span class="tp-icon"><i class="fas fa-building"></i></span>
+              <span>
+                <span class="tp-label" style="display:block;">Pessoa Jurídica</span>
+                <span class="tp-sub">CNPJ</span>
+              </span>
+              <input type="radio" name="tipoPessoa" id="tipoPJ" value="PJ" style="display:none;">
+            </label>
+          </div>
+          <div class="error-text" id="erroTipoPessoa" style="display:none;margin-top:4px;">Selecione o tipo de pessoa.</div>
+        </div>
+
+        <!-- ETAPA 2: Identificação -->
+        <div class="wstep" data-step="2">
+          <div class="step-head">
+            <div class="step-title">
+              <i class="fas fa-id-card" style="margin-right:8px;"></i>
+              Identificação
+            </div>
+            <div class="step-sub">Dados de identificação do cliente.</div>
+          </div>
+          <!-- PF -->
+          <div class="pf-fields" id="fieldsPF">
+            <div class="field full" data-field="pfNome">
+              <label for="pfNome">Nome completo *</label>
+              <input type="text" id="pfNome" placeholder="Ex: João da Silva">
+              <div class="error-text">Informe o nome completo.</div>
+            </div>
+            <div class="field" data-field="pfCpf">
+              <label for="pfCpf">CPF *</label>
+              <input type="text" id="pfCpf" placeholder="000.000.000-00" inputmode="numeric" maxlength="14">
+              <div class="error-text">CPF inválido.</div>
+            </div>
+          </div>
+          <!-- PJ -->
+          <div class="pj-fields" id="fieldsPJ">
+            <div class="field full" data-field="pjRazao">
+              <label for="pjRazao">Razão Social *</label>
+              <input type="text" id="pjRazao" placeholder="Ex: Metalúrgica Rio Preto Ltda">
+              <div class="error-text">Informe a razão social.</div>
+            </div>
+            <div class="field full" data-field="pjFantasia">
+              <label for="pjFantasia">Nome Fantasia</label>
+              <input type="text" id="pjFantasia" placeholder="Nome fantasia">
+            </div>
+            <div class="field" data-field="pjCnpj">
+              <label for="pjCnpj">CNPJ *</label>
+              <input type="text" id="pjCnpj" placeholder="00.000.000/0000-00" inputmode="numeric" maxlength="18">
+              <div class="error-text">CNPJ inválido.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ETAPA 3: Contato -->
+        <div class="wstep" data-step="3">
+          <div class="step-head">
+            <div class="step-title">
+              <i class="fas fa-phone" style="margin-right:8px;"></i>
+              Contato
+            </div>
+            <div class="step-sub">Informações de contato do cliente.</div>
+          </div>
+          <!-- PF -->
+          <div class="pf-fields" id="fieldsPFContato">
+            <div class="field" data-field="pfTelefone">
+              <label for="pfTelefone">Telefone *</label>
+              <input type="text" id="pfTelefone" placeholder="(00) 00000-0000" inputmode="numeric" maxlength="15">
+              <div class="error-text">Informe um telefone válido.</div>
+            </div>
+            <div class="field">
+              <label for="pfWhatsapp">WhatsApp</label>
+              <input type="text" id="pfWhatsapp" placeholder="(00) 00000-0000" inputmode="numeric" maxlength="15">
+            </div>
+            <div class="field full" data-field="pfEmail">
+              <label for="pfEmail">E-mail</label>
+              <input type="email" id="pfEmail" placeholder="cliente@email.com">
+              <div class="error-text">E-mail inválido.</div>
+            </div>
+          </div>
+          <!-- PJ -->
+          <div class="pj-fields" id="fieldsPJContato">
+            <div class="field" data-field="pjTelefone">
+              <label for="pjTelefone">Telefone *</label>
+              <input type="text" id="pjTelefone" placeholder="(00) 00000-0000" inputmode="numeric" maxlength="15">
+              <div class="error-text">Informe um telefone válido.</div>
+            </div>
+            <div class="field">
+              <label for="pjWhatsapp">WhatsApp</label>
+              <input type="text" id="pjWhatsapp" placeholder="(00) 00000-0000" inputmode="numeric" maxlength="15">
+            </div>
+            <div class="field full" data-field="pjEmail">
+              <label for="pjEmail">E-mail</label>
+              <input type="email" id="pjEmail" placeholder="contato@empresa.com">
+              <div class="error-text">E-mail inválido.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ETAPA 4: Endereço -->
+        <div class="wstep" data-step="4">
+          <div class="step-head">
+            <div class="step-title">
+              <i class="fas fa-map-marker-alt" style="margin-right:8px;"></i>
+              Endereço
+            </div>
+            <div class="step-sub">Endereço principal do cliente.</div>
+          </div>
+          <!-- PF -->
+          <div class="pf-fields" id="fieldsPFEndereco">
+            <div class="field-grid">
+              <div class="field">
+                <label for="pfCep">CEP</label>
+                <input type="text" id="pfCep" placeholder="00000-000" inputmode="numeric" maxlength="9">
+                <div class="cep-status" id="pfCepStatus"></div>
+              </div>
+              <div class="field full" data-field="pfEndereco">
+                <label for="pfEndereco">Endereço *</label>
+                <input type="text" id="pfEndereco" placeholder="Rua, Av...">
+                <div class="error-text">Informe o endereço.</div>
+              </div>
+              <div class="field" data-field="pfNumero">
+                <label for="pfNumero">Número *</label>
+                <input type="text" id="pfNumero" placeholder="Nº" inputmode="numeric">
+                <div class="error-text">Informe o número.</div>
+              </div>
+              <div class="field">
+                <label for="pfComplemento">Complemento</label>
+                <input type="text" id="pfComplemento" placeholder="Apto, bloco...">
+              </div>
+              <div class="field">
+                <label for="pfBairro">Bairro</label>
+                <input type="text" id="pfBairro" placeholder="Bairro">
+              </div>
+              <div class="field" data-field="pfCidade">
+                <label for="pfCidade">Cidade *</label>
+                <input type="text" id="pfCidade" placeholder="Cidade">
+                <div class="error-text">Informe a cidade.</div>
+              </div>
+              <div class="field" data-field="pfUf">
+                <label for="pfUf">UF *</label>
+                <input type="text" id="pfUf" placeholder="SP" maxlength="2" style="text-transform:uppercase;">
+                <div class="error-text">Informe a UF.</div>
+              </div>
+            </div>
+          </div>
+          <!-- PJ -->
+          <div class="pj-fields" id="fieldsPJEndereco">
+            <div class="field-grid">
+              <div class="field">
+                <label for="pjCep">CEP</label>
+                <input type="text" id="pjCep" placeholder="00000-000" inputmode="numeric" maxlength="9">
+                <div class="cep-status" id="pjCepStatus"></div>
+              </div>
+              <div class="field full" data-field="pjEndereco">
+                <label for="pjEndereco">Endereço *</label>
+                <input type="text" id="pjEndereco" placeholder="Rua, Av...">
+                <div class="error-text">Informe o endereço.</div>
+              </div>
+              <div class="field" data-field="pjNumero">
+                <label for="pjNumero">Número *</label>
+                <input type="text" id="pjNumero" placeholder="Nº" inputmode="numeric">
+                <div class="error-text">Informe o número.</div>
+              </div>
+              <div class="field">
+                <label for="pjComplemento">Complemento</label>
+                <input type="text" id="pjComplemento" placeholder="Sala, galpão...">
+              </div>
+              <div class="field">
+                <label for="pjBairro">Bairro</label>
+                <input type="text" id="pjBairro" placeholder="Bairro">
+              </div>
+              <div class="field" data-field="pjCidade">
+                <label for="pjCidade">Cidade *</label>
+                <input type="text" id="pjCidade" placeholder="Cidade">
+                <div class="error-text">Informe a cidade.</div>
+              </div>
+              <div class="field" data-field="pjUf">
+                <label for="pjUf">UF *</label>
+                <input type="text" id="pjUf" placeholder="SP" maxlength="2" style="text-transform:uppercase;">
+                <div class="error-text">Informe a UF.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ETAPA 5: Controle -->
+        <div class="wstep" data-step="5">
+          <div class="step-head">
+            <div class="step-title">
+              <i class="fas fa-sliders-h" style="margin-right:8px;"></i>
+              Controle
+            </div>
+            <div class="step-sub">Situação e observações sobre o cliente.</div>
+          </div>
+          <!-- PF -->
+          <div class="pf-fields" id="fieldsPFControle">
+            <div class="field full">
+              <label>Situação *</label>
+              <div class="situacao-toggle" id="situacaoTogglePF">
+                <div class="situacao-opt selected" data-value="Ativo">
+                  <input type="radio" name="pfSituacao" value="Ativo" checked> <i class="fas fa-check-circle" style="color:var(--success);"></i> Ativo
+                </div>
+                <div class="situacao-opt" data-value="Inativo">
+                  <input type="radio" name="pfSituacao" value="Inativo"> <i class="fas fa-times-circle" style="color:var(--danger);"></i> Inativo
+                </div>
+              </div>
+            </div>
+            <div class="field full">
+              <label for="pfObs">Observações</label>
+              <textarea id="pfObs" placeholder="Observações adicionais sobre o cliente..."></textarea>
+            </div>
+          </div>
+          <!-- PJ -->
+          <div class="pj-fields" id="fieldsPJControle">
+            <div class="field full">
+              <label>Situação *</label>
+              <div class="situacao-toggle" id="situacaoTogglePJ">
+                <div class="situacao-opt selected" data-value="Ativo">
+                  <input type="radio" name="pjSituacao" value="Ativo" checked> <i class="fas fa-check-circle" style="color:var(--success);"></i> Ativo
+                </div>
+                <div class="situacao-opt" data-value="Inativo">
+                  <input type="radio" name="pjSituacao" value="Inativo"> <i class="fas fa-times-circle" style="color:var(--danger);"></i> Inativo
+                </div>
+              </div>
+            </div>
+            <div class="field full">
+              <label for="pjObs">Observações</label>
+              <textarea id="pjObs" placeholder="Observações adicionais sobre o cliente..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navegação do Wizard -->
+        <div class="wizard-nav">
+          <button type="button" class="btn btn-ghost" data-prev id="btnVoltarCliente">
+            <i class="fas fa-arrow-left"></i> Voltar
+          </button>
+          <div class="wnav-spacer"></div>
+          <button type="button" class="btn btn-amber" data-next id="btnAvancarCliente">
+            Avançar <i class="fas fa-arrow-right"></i>
+          </button>
+          <button type="submit" class="btn btn-amber" id="btnEnviarCliente" style="display:none;">
+            <i class="fas fa-save"></i>
+            Salvar cliente
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="../shared/js/ui.js"></script>
+<script src="../shared/js/utils.js"></script>
+<script src="js/app.js"></script>
+<script src="js/clientes.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+/* =========================================================
+   Componentes compartilhados: Modal de confirmação + Toast
+   Usados por todas as páginas da área "equipe" para
+   confirmar ações destrutivas/importantes e para dar
+   feedback de sucesso ou erro.
+   ========================================================= */
+
+/* ---------- Modal de confirmação ---------- */
+.ui-confirm-overlay {
+  position: fixed; inset: 0; background: rgba(20, 23, 28, 0.45);
+  backdrop-filter: blur(3px); display: none; align-items: center;
+  justify-content: center; padding: 24px; z-index: 1300;
+}
+.ui-confirm-overlay.open { display: flex; }
+
+.ui-confirm {
+  background: var(--paper-card); width: 100%; max-width: 380px;
+  border-radius: 16px; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.25);
+  padding: 26px 26px 22px; text-align: center;
+  animation: uiConfirmIn .16s ease;
+}
+@keyframes uiConfirmIn {
+  from { opacity: 0; transform: translateY(6px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ui-confirm-icon {
+  width: 46px; height: 46px; border-radius: 50%; margin: 0 auto 14px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--route-amber-soft); color: var(--route-amber-text); font-size: 18px;
+}
+.ui-confirm-overlay.danger .ui-confirm-icon {
+  background: var(--signal-red-soft); color: var(--signal-red);
+}
+
+.ui-confirm-title {
+  font-family: var(--font-display); font-size: 16px; font-weight: 700;
+  color: var(--ink); margin: 0 0 8px;
+}
+.ui-confirm-message {
+  font-size: 13px; color: var(--ink-soft); line-height: 1.5; margin: 0 0 20px;
+}
+.ui-confirm-actions {
+  display: flex; gap: 10px; justify-content: center;
+}
+.ui-confirm-actions .btn { flex: 1; justify-content: center; }
+
+/* ---------- Toast de sucesso / erro ---------- */
+.ui-toast {
+  position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: #fff;
+  padding: 14px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .22); display: flex; align-items: center; gap: 10px;
+  z-index: 1400; opacity: 0; transform: translateY(8px) scale(0.96);
+  transition: opacity .18s ease, transform .18s ease; pointer-events: none;
+  min-width: 200px; max-width: 420px;
+}
+.ui-toast.show { opacity: 1; transform: translateY(0) scale(1); }
+.ui-toast-icon {
+  width: 22px; height: 22px; border-radius: 50%; background: var(--signal-green);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  font-size: 11px; font-weight: 700;
+}
+.ui-toast.error .ui-toast-icon { background: var(--signal-red); }
+
+@media (max-width: 640px) {
+  .ui-toast { bottom: 16px; right: 16px; left: 16px; max-width: none; font-size: 12px; padding: 12px 16px; }
+  .ui-confirm { max-width: none; padding: 22px 20px 18px; }
+}

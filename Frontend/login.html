@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="img/simple-logo.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unitrans · Entrar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root{
+    --asphalt-950:#12151A;
+    --asphalt-900:#181C22;
+    --asphalt-800:#232830;
+    --asphalt-700:#2E3540;
+    --paper:#F2F3EF;
+    --paper-card:#FFFFFF;
+    --ink:#1B1E23;
+    --ink-soft:#6B7178;
+    --ink-faint:#9AA0A6;
+    --line:#E3E4DE;
+    --blue:#1E49E2;
+    --blue-bright:#3E7BFF;
+    --blue-soft:#E8EDFC;
+    --blue-text:#1638A6;
+    --green:#2C9A63;
+    --green-soft:#E4F5EC;
+    --red:#C6543F;
+    --red-soft:#F8E9E6;
+    --radius:12px;
+    --font-display:'Space Grotesk',sans-serif;
+    --font-body:'Inter',sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;}
+  html,body{height:100%;}
+  body{
+    font-family:var(--font-body);
+    color:var(--ink);
+    background:var(--paper);
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+  button{font-family:inherit;}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
+  }
+
+  .screen{
+    display:grid;
+    grid-template-columns:1.15fr 1fr;
+    min-height:100vh;
+  }
+
+  /* -------- Left: brand panel -------- */
+  .brand-panel{
+    position:relative;
+    background:linear-gradient(175deg, var(--asphalt-950) 0%, var(--asphalt-900) 55%, var(--asphalt-800) 100%);
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding:48px 56px;
+    overflow:hidden;
+    isolation:isolate;
+  }
+
+  /* quadriculado / blueprint grid, fading toward the edges */
+  .brand-grid{
+    position:absolute; inset:-2px;
+    z-index:0;
+    background-image:
+      linear-gradient(rgba(150,175,255,0.10) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(150,175,255,0.10) 1px, transparent 1px);
+    background-size:34px 34px;
+    -webkit-mask-image:radial-gradient(circle at 68% 78%, #000 0%, rgba(0,0,0,0.65) 35%, transparent 78%);
+    mask-image:radial-gradient(circle at 68% 78%, #000 0%, rgba(0,0,0,0.65) 35%, transparent 78%);
+    animation:gridDrift 26s linear infinite;
+  }
+  @keyframes gridDrift{
+    0%{ background-position:0 0; }
+    100%{ background-position:34px 68px; }
+  }
+  .brand-glow{
+    position:absolute; z-index:0;
+    width:640px; height:640px;
+    right:-160px; bottom:-220px;
+    background:radial-gradient(circle, rgba(62,123,255,0.35), transparent 68%);
+    filter:blur(4px);
+    pointer-events:none;
+  }
+  .brand-panel::after{
+    /* road-line motif */
+    content:"";
+    position:absolute; z-index:0;
+    left:0; right:0; bottom:56px;
+    height:2px;
+    background:repeating-linear-gradient(90deg, rgba(255,255,255,0.14) 0 28px, transparent 28px 52px);
+  }
+
+  .brand-top{ position:relative; z-index:2; opacity:0; animation:fadeIn .6s ease .05s forwards; }
+  .brand-logo-row{ display:flex; align-items:center; gap:10px; }
+  .brand-logo-row img{ height:30px; width:auto; display:block; filter:brightness(0) invert(1); opacity:.95; }
+
+  .brand-copy{ position:relative; z-index:2; max-width:430px; opacity:0; animation:fadeSlideUp .7s cubic-bezier(.2,.7,.2,1) .15s forwards; }
+  .brand-copy .eyebrow{
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    letter-spacing:.4px;
+    color:#9DB4FF;
+    margin-bottom:14px;
+    display:block;
+  }
+  .brand-copy h1{
+    font-family:var(--font-display);
+    font-size:36px;
+    line-height:1.2;
+    font-weight:700;
+    margin-bottom:14px;
+    letter-spacing:-.2px;
+  }
+  .brand-copy p{
+    font-size:14.5px;
+    line-height:1.65;
+    color:#B9BFC9;
+  }
+
+  .brand-truck{
+    position:relative; z-index:1;
+    margin:8px -8px -12px auto;
+    width:min(560px, 92%);
+    display:block;
+    filter:drop-shadow(0 22px 34px rgba(0,0,0,0.55)) drop-shadow(0 0 46px rgba(62,123,255,0.32));
+    opacity:0;
+    animation:truckIn 1s cubic-bezier(.2,.7,.2,1) .25s forwards, truckFloat 5s ease-in-out 1.25s infinite;
+  }
+  @keyframes truckIn{
+    from{ opacity:0; transform:translateX(26px) translateY(6px); }
+    to{ opacity:1; transform:translateX(0) translateY(0); }
+  }
+  @keyframes truckFloat{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(-9px); }
+  }
+
+  .brand-bottom{ position:relative; z-index:2; display:flex; gap:28px; opacity:0; animation:fadeIn .6s ease .5s forwards; }
+  .bb-stat .num{ font-family:var(--font-display); font-size:20px; font-weight:700; }
+  .bb-stat .lbl{ font-size:12px; color:#8B93A0; margin-top:2px; }
+
+  @keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+  @keyframes fadeSlideUp{ from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
+
+  /* -------- Right: form panel -------- */
+  .form-panel{
+    position:relative;
+    min-width:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px;
+    background:
+      linear-gradient(rgba(27,30,35,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(27,30,35,0.035) 1px, transparent 1px),
+      var(--paper);
+    background-size:34px 34px, 34px 34px, auto;
+  }
+  .form-wrap{
+    position:relative; z-index:1;
+    width:100%; max-width:392px;
+    opacity:0;
+    animation:fadeSlideUp .6s cubic-bezier(.2,.7,.2,1) .12s forwards;
+  }
+  .form-wrap .mobile-logo{ display:none; }
+
+  .form-card{
+    background:var(--paper-card);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:32px 32px 26px;
+    box-shadow:0 1px 2px rgba(20,23,28,0.04), 0 18px 40px -18px rgba(20,23,28,0.16);
+  }
+
+  .form-head{ margin-bottom:26px; }
+  .form-head h2{
+    font-family:var(--font-display);
+    font-size:23px;
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  .form-head p{ font-size:13.5px; color:var(--ink-soft); }
+
+  .field{ margin-bottom:16px; }
+  .field label{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink);
+    margin-bottom:6px;
+  }
+  .field input{
+    width:100%;
+    padding:11px 13px;
+    border:1px solid var(--line);
+    border-radius:9px;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--ink);
+    background:var(--paper-card);
+    outline:none;
+    transition:border-color .12s ease, box-shadow .12s ease;
+  }
+  .field input::placeholder{ color:var(--ink-faint); }
+  .field input:focus{
+    border-color:var(--blue);
+    box-shadow:0 0 0 3px var(--blue-soft);
+  }
+  .field-pass{ position:relative; }
+  .toggle-pass{
+    position:absolute;
+    right:8px; top:29px;
+    width:26px; height:26px;
+    display:flex; align-items:center; justify-content:center;
+    background:none; border:none; cursor:pointer; border-radius:6px;
+    color:var(--ink-faint); font-size:14px;
+    padding:0;
+  }
+  .toggle-pass:hover{ color:var(--ink-soft); background:var(--paper); }
+
+  .form-row-between{ display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .remember{ display:flex; align-items:center; gap:7px; font-size:13px; color:var(--ink-soft); }
+  .remember input{ accent-color:var(--blue); width:14px; height:14px; }
+  .forgot{ font-size:13px; color:var(--blue-text); font-weight:600; text-decoration:none; }
+  .forgot:hover{ text-decoration:underline; }
+
+  .btn-submit{
+    width:100%;
+    padding:12px 16px;
+    border:none;
+    border-radius:9px;
+    background:linear-gradient(135deg, var(--blue-bright), var(--blue));
+    color:#fff;
+    font-size:14.5px;
+    font-weight:600;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    box-shadow:0 10px 22px -10px rgba(30,73,226,0.55);
+    transition:box-shadow .15s ease, transform .08s ease, filter .12s ease;
+  }
+  .btn-submit:hover{ filter:brightness(1.06); box-shadow:0 14px 26px -10px rgba(30,73,226,0.65); }
+  .btn-submit:active{ transform:translateY(1px); }
+  .btn-submit svg{ width:15px; height:15px; transition:transform .15s ease; }
+  .btn-submit:hover svg{ transform:translateX(2px); }
+  .btn-submit.loading{ opacity:.75; pointer-events:none; }
+
+  .error-banner{
+    display:none;
+    align-items:flex-start;
+    gap:8px;
+    background:var(--red-soft);
+    color:#8C3A2A;
+    border:1px solid #EFCFC6;
+    border-radius:9px;
+    padding:10px 12px;
+    font-size:13px;
+    margin-bottom:16px;
+    line-height:1.45;
+  }
+  .error-banner.show{ display:flex; animation:shake .32s ease; }
+  .error-banner svg{ flex-shrink:0; margin-top:1px; }
+  @keyframes shake{
+    0%,100%{ transform:translateX(0); }
+    25%{ transform:translateX(-4px); }
+    75%{ transform:translateX(4px); }
+  }
+
+  .signup-row{ text-align:center; margin-top:18px; font-size:13px; color:var(--ink-soft); }
+  .signup-row a{ color:var(--blue-text); font-weight:600; text-decoration:none; }
+  .signup-row a:hover{ text-decoration:underline; }
+
+  @media (max-width: 880px){
+    .screen{ grid-template-columns:1fr; }
+    .brand-panel{ display:none; }
+    .form-panel{ padding:28px 20px; align-items:flex-start; padding-top:48px; }
+    .form-wrap .mobile-logo{
+      display:flex; align-items:center; gap:9px; margin-bottom:32px;
+    }
+    .form-wrap .mobile-logo img{ height:28px; }
+    .form-card{ padding:26px 22px 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="screen">
+
+  <!-- Brand panel -->
+  <div class="brand-panel">
+    <div class="brand-grid"></div>
+    <div class="brand-glow"></div>
+
+    <div class="brand-top">
+      <div class="brand-logo-row">
+        <img src="img/logo.png" alt="Unitrans">
+      </div>
+    </div>
+
+    <div class="brand-copy">
+      <span class="eyebrow">PAINEL UNITRANS</span>
+      <h1>Cada rota, carga e entrega em um só lugar.</h1>
+      <p>Acesse com sua conta de cliente, motorista ou equipe para acompanhar solicitações, cargas e rotas em tempo real.</p>
+    </div>
+
+    <img class="brand-truck" src="img/truck-hero.png" alt="Caminhão Unitrans em movimento">
+
+  </div>
+
+  <!-- Form panel -->
+  <div class="form-panel">
+    <div class="form-wrap">
+
+      <div class="mobile-logo">
+        <img src="img/logo.png" alt="Unitrans">
+      </div>
+
+      <div class="form-card">
+
+        <div class="form-head">
+          <h2>Entrar na sua conta</h2>
+          <p>Informe seu e-mail e senha para acessar o painel.</p>
+        </div>
+
+        <div class="error-banner" id="errorBanner">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+          <span id="errorText">E-mail ou senha incorretos. Confira os dados e tente novamente.</span>
+        </div>
+
+        <form id="loginForm" novalidate>
+          <div class="field">
+            <label for="email">E-mail</label>
+            <input type="email" id="email" placeholder="voce@unitrans.com.br" autocomplete="username">
+          </div>
+          <div class="field field-pass">
+            <label for="senha">Senha</label>
+            <input type="password" id="senha" placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="toggle-pass" id="togglePass" aria-label="Mostrar senha"><i class="fas fa-eye"></i></button>
+          </div>
+
+          <div class="form-row-between">
+            <label class="remember"><input type="checkbox" id="remember"> Lembrar de mim</label>
+            <a href="esqueci-senha.html" class="forgot">Esqueci minha senha</a>
+          </div>
+
+          <button type="submit" class="btn-submit" id="submitBtn">
+            Entrar
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </form>
+
+        <div class="signup-row">Ainda não é cliente? <a href="cadastro.html">Criar conta</a></div>
+
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+
+  // Contas de demonstração — cada perfil aponta para uma área diferente do sistema.
+  var ACCOUNTS = [
+   {
+      role: 'cliente',
+      label: 'Cliente',
+      email: 'cliente@unitrans.com.br',
+      senha: 'cliente123',
+      redirect: 'cliente/index.html'
+    }
+   ,
+    {
+      role: 'motorista',
+      label: 'Motorista',
+      email: 'motorista@unitrans.com.br',
+      senha: 'motorista123',
+      redirect: 'motorista/carga.html'
+    },
+    {
+      role: 'equipe',
+      label: 'Equipe',
+      email: 'analista@unitrans.com.br',
+      senha: 'equipe123',
+      redirect: 'equipe/dashboard.html'
+    }
+  ];
+
+  var form = document.getElementById('loginForm');
+  var emailInput = document.getElementById('email');
+  var senhaInput = document.getElementById('senha');
+  var errorBanner = document.getElementById('errorBanner');
+  var errorText = document.getElementById('errorText');
+  var submitBtn = document.getElementById('submitBtn');
+  var togglePass = document.getElementById('togglePass');
+
+  // Contas criadas pela tela de cadastro.html nesta sessão (protótipo sem
+  // backend real ainda — quando o cadastro passar a gravar no Supabase, isto
+  // deixa de ser necessário e o login passa a consultar a API).
+  function getCadastrosSalvos() {
+    try {
+      return JSON.parse(sessionStorage.getItem('unitrans_novos_cadastros') || '[]');
+    } catch (e) { return []; }
+  }
+
+  // Pré-preenche o e-mail quando o usuário chega aqui logo depois de criar a conta.
+  (function preencherEmailDoCadastro() {
+    var params = new URLSearchParams(window.location.search);
+    var email = params.get('email');
+    if (email) emailInput.value = email;
+  })();
+
+  var togglePassIcon = togglePass.querySelector('i');
+  togglePass.addEventListener('click', function () {
+    var isPass = senhaInput.type === 'password';
+    senhaInput.type = isPass ? 'text' : 'password';
+    togglePassIcon.classList.toggle('fa-eye', !isPass);
+    togglePassIcon.classList.toggle('fa-eye-slash', isPass);
+    togglePass.setAttribute('aria-label', isPass ? 'Ocultar senha' : 'Mostrar senha');
+  });
+
+  function showError(msg) {
+    errorText.textContent = msg;
+    errorBanner.classList.add('show');
+  }
+  function hideError() {
+    errorBanner.classList.remove('show');
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    hideError();
+
+    var email = emailInput.value.trim().toLowerCase();
+    var senha = senhaInput.value;
+
+    if (!email || !senha) {
+      showError('Preencha e-mail e senha para continuar.');
+      return;
+    }
+
+    var match = ACCOUNTS.find(function (acc) {
+      return acc.email.toLowerCase() === email && acc.senha === senha;
+    });
+
+    // Também aceita clientes que se auto-cadastraram em cadastro.html.
+    if (!match) {
+      var cadastro = getCadastrosSalvos().find(function (c) {
+        return c.email.toLowerCase() === email && c.senha === senha;
+      });
+      if (cadastro) {
+        match = { role: 'cliente', email: cadastro.email, redirect: 'cliente/index.html' };
+      }
+    }
+
+    if (!match) {
+      showError('E-mail ou senha incorretos. Confira os dados e tente novamente.');
+      return;
+    }
+
+    submitBtn.classList.add('loading');
+    submitBtn.textContent = 'Entrando…';
+
+    try {
+      sessionStorage.setItem('unitrans_role', match.role);
+      sessionStorage.setItem('unitrans_email', match.email);
+    } catch (err) { /* ignora se storage indisponível */ }
+
+    setTimeout(function () {
+      window.location.href = match.redirect;
+    }, 450);
+  });
+
+})();
+</script>
+
+</body>
+</html>

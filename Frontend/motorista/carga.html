@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="../img/simple-logo.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unitrans · Análise de carga</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Font Awesome 6 (Free) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="../equipe/css/style.css">
+<link rel="stylesheet" href="../shared/css/ui.css">
+<style>
+  .toolbar .chip { cursor:pointer; }
+  .chip.today { border-color: var(--route-amber); font-weight:700; }
+  .chip.today:not(.active) { background: var(--route-amber-soft); color: var(--route-amber-text); }
+  tr.linha-carga { cursor:pointer; }
+  .col-chevron { width:28px; text-align:right; color:var(--ink-faint); }
+  .col-chevron i { transition: transform .12s; }
+  tr.linha-carga.aberta .col-chevron i { transform: rotate(180deg); }
+  tr.linha-detalhe td { padding:0; border-bottom:1px solid var(--line); }
+  tr.linha-detalhe .detalhe-inner { display:none; padding:18px 22px 24px; background:#FAFAF8; }
+  tr.linha-detalhe.open .detalhe-inner { display:block; }
+  .detalhe-meta { display:flex; align-items:center; gap:8px; margin-bottom:14px; color:var(--ink-faint); }
+  .mini-table-wrap { background:#fff; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  .mini-table { width:100%; border-collapse:separate; border-spacing:0; font-size:12.5px; table-layout:fixed; }
+  .mini-table col.col-tipo { width:110px; }
+  .mini-table col.col-cliente { width:26%; }
+  .mini-table col.col-endereco { width:auto; }
+  .mini-table col.col-peso { width:90px; }
+  .mini-table th { text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-faint); font-weight:600; padding:14px 18px !important; background:#F6F5F1; border-bottom:1px solid var(--line); }
+  .mini-table-wrap table.mini-table td { padding:18px !important; border-bottom:1px solid var(--line); vertical-align:middle; line-height:1.4; }
+  .mini-table tbody tr:nth-child(even) td { background:#FBFBF9; }
+  .mini-table tbody tr:hover td { background:#F3F2ED; }
+  .mini-table th:last-child, .mini-table td.col-peso-cell { text-align:right; }
+  .mini-table td.col-endereco-cell { color:var(--ink-faint); }
+  .mini-table tbody tr:last-child td { border-bottom:none; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="sidebar-mount"></div>
+  <script src="../shared/js/sidebar-engine.js"></script>
+  <script src="js/sidebar.js"></script>
+
+  <div class="main">
+    <div class="page active" id="page-carga">
+
+      <div class="topbar">
+        <div>
+          <div class="page-title">Análise de carga</div>
+          <div class="page-date">Suas cargas da semana, organizadas por dia</div>
+        </div>
+      </div>
+
+      <div class="content">
+
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>Cargas da semana</h3>
+              <div class="sub" id="cargaSemanaSub">Cargas de hoje — clique em uma linha para ver os itens</div>
+            </div>
+          </div>
+          <div class="toolbar" id="filterToolbarSemana"></div>
+          <table>
+            <thead>
+              <tr>
+                <th>Carga</th>
+                <th>Data</th>
+                <th>Veículo</th>
+                <th>Itens</th>
+                <th>Peso</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="cargaHistoricoBody">
+              <tr><td colspan="7" class="mono">Carregando cargas…</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../shared/js/ui.js"></script>
+<script src="../shared/js/utils.js"></script>
+<script src="js/app.js"></script>
+<script src="js/carga.js"></script>
+</body>
+</html>

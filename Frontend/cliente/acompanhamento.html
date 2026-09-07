@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+<link rel="icon" type="image/png" href="../img/simple-logo.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unitrans · Acompanhar solicitações</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Font Awesome 6 (Free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/acompanhamento.css">
+</head>
+<body>
+
+<div class="app">
+  <div id="sidebar-mount"></div>
+  <script src="../shared/js/sidebar-engine.js"></script>
+  <script src="js/sidebar.js"></script>
+
+  <div class="main">
+    <div id="mobile-nav-mount"></div>
+
+    <div class="topbar">
+      <div>
+        <div class="page-title">Acompanhar solicitações</div>
+        <div class="page-sub">Histórico completo das suas solicitações de carga</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="panel">
+
+        <div class="panel-head">
+          <div class="filter-pills" id="filterPills"></div>
+          <div class="table-search">
+            <i class="fas fa-search"></i>
+            <input type="text" id="buscaInput" placeholder="Filtrar por protocolo ou carga...">
+          </div>
+        </div>
+
+        <div id="tabelaWrap"></div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../shared/js/utils.js"></script>
+<script src="js/acompanhamento.js"></script>
+</body>
+</html>

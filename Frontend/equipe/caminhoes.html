@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="../img/simple-logo.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unitrans · Caminhões</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Font Awesome 6 (Free) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="../shared/css/ui.css">
+</head>
+<body>
+<div class="app">
+  <div id="sidebar-mount"></div>
+  <script src="../shared/js/sidebar-engine.js"></script>
+  <script src="js/sidebar.js"></script>
+
+  <div class="main">
+    <div class="page active" id="page-caminhoes">
+
+      <div class="topbar">
+        <div>
+          <div class="page-title">Caminhões</div>
+          <div class="page-date">Cadastro de veículos disponíveis para rotas de coleta e entrega</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-amber" id="btnNovoCaminhao">
+            <i class="fas fa-plus"></i>
+            Novo caminhão
+          </button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="panel">
+          <table>
+            <thead><tr><th>Placa</th><th>Marca / Modelo</th><th>Capacidade</th><th>Proprietário</th><th>Licenciamento</th><th>Situação</th><th></th></tr></thead>
+            <tbody id="tabelaCaminhoes">
+              <tr><td colspan="7" style="text-align:center;color:var(--ink-faint);">Carregando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Novo caminhão (Wizard em 3 etapas) -->
+<div class="modal-overlay" id="modalCaminhaoOverlay">
+  <div class="modal" style="max-width:680px;">
+    <button class="modal-close" id="fecharModalCaminhao" type="button" aria-label="Fechar">
+      <i class="fas fa-times"></i>
+    </button>
+
+    <div class="wizard-card" id="wizardCardCaminhao">
+      <!-- Progresso -->
+      <div class="progress">
+        <div class="progress-step" data-step="1">
+          <div class="bar"></div>
+          <div class="circle">1</div>
+          <div class="label">Identificação</div>
+        </div>
+        <div class="progress-step" data-step="2">
+          <div class="bar"></div>
+          <div class="circle">2</div>
+          <div class="label">Licenciamento</div>
+        </div>
+        <div class="progress-step" data-step="3">
+          <div class="bar"></div>
+          <div class="circle">3</div>
+          <div class="label">Controle</div>
+        </div>
+      </div>
+
+      <form id="formCaminhao" novalidate>
+
+        <!-- ETAPA 1: Identificação do veículo -->
+        <div class="wstep" data-step="1">
+          <div class="step-head">
+            <div class="step-title">
+              <i class="fas fa-truck" style="margin-right:8px;"></i>
+              Identificação do veículo
+            </div>
+            <div class="step-sub">Dados básicos para registrar o caminhão na frota.</div>
+          </div>
+          <div class="field-grid">
+            <div class="field" data-field="placa">
+              <label for="placaCaminhao">Placa *</label>
+              <input type="text" id="placaCaminhao" placeholder="ABC-1D23" maxlength="8" style="text-transform:uppercase;">
+              <div class="error-text">Informe uma placa válida.</div>
+            </div>
+            <div class="field" data-field="renavam">
+              <label for="renavamCaminhao">RENAVAM *</label>
+              <input type="text" id="renavamCaminhao" inputmode="numeric" placeholder="00123456789" maxlength="11">
+              <div class="error-text">Informe os 11 dígitos do RENAVAM.</div>
+            </div>
+            <div class="field" data-field="marca">
+              <label for="marcaCaminhao">Marca *</label>
+              <input type="text" id="marcaCaminhao" placeholder="Ex.: Fiat">
+              <div class="error-text">Informe a marca.</div>
+            </div>
+            <div class="field" data-field="modelo">
+              <label for="modeloCaminhao">Modelo *</label>
+              <input type="text" id="modeloCaminhao" placeholder="Ex.: Fiorino">
+              <div class="error-text">Informe o modelo.</div>
+            </div>
+            <div class="field" data-field="anoFabricacao">
+              <label for="anoFabricacaoCaminhao">Ano de fabricação *</label>
+              <input type="text" id="anoFabricacaoCaminhao" inputmode="numeric" placeholder="2023" maxlength="4">
+              <div class="error-text">Informe um ano válido.</div>
+            </div>
+            <div class="field" data-field="anoModelo">
+              <label for="anoModeloCaminhao">Ano modelo *</label>
+              <input type="text" id="anoModeloCaminhao" inputmode="numeric" placeholder="2024" maxlength="4">
+              <div class="error-text">Informe um ano válido.</div>
+            </div>
+            <div class="field" data-field="tipo">
+              <label for="tipoCaminhao">Tipo de veículo *</label>
+              <select id="tipoCaminhao">
+                <option value="">Selecione…</option>
+                <option value="furgao">Furgão / Utilitário</option>
+                <option value="vuc">VUC (3/4)</option>
+                <option value="toco">Toco</option>
+                <option value="truck">Truck</option>
+                <option value="carreta">Carreta</option>
+                <option value="bitrem">Bitrem</option>
+                <option value="outro">Outro</option>
+              </select>
+              <div class="error-text">Selecione o tipo de veículo.</div>
+            </div>
+            <div class="field" data-field="capacidade">
+              <label for="capacidadeCaminhao">Capacidade de carga (kg) *</label>
+              <input type="text" id="capacidadeCaminhao" inputmode="numeric" placeholder="650">
+              <div class="error-text">Informe a capacidade.</div>
+            </div>
+            <div class="field full" data-field="proprietario">
+              <label for="proprietarioCaminhao">Proprietário *</label>
+              <input type="text" id="proprietarioCaminhao" placeholder="Ex.: Unitrans Logística ou nome do terceirizado">
+              <div class="error-text">Informe o proprietário.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ETAPA 2: Licenciamento -->
+        <div class="wstep" data-step="2">
+          <div class="step-head">
+            <div class="step-title">
+              <i class="fas fa-file-alt" style="margin-right:8px;"></i>
+              Licenciamento
+            </div>
+            <div class="step-sub">Documentação e situação do veículo perante o Detran.</div>
+          </div>
+          <div class="field full" data-field="situacaoLicenciamento" style="margin-bottom:12px;">
+            <label>Situação do licenciamento *</label>
+            <div class="licenc-toggle">
+              <label class="licenc-opt regular" data-val="regular"><input type="radio" name="situacaoLicenciamento" value="regular">
+                <span class="dot"></span> Regular
+              </label>
+              <label class="licenc-opt pendente" data-val="pendente"><input type="radio" name="situacaoLicenciamento" value="pendente">
+                <span class="dot"></span> Pendente
+              </label>
+              <label class="licenc-opt nao_verificado" data-val="nao_verificado"><input type="radio" name="situacaoLicenciamento" value="nao_verificado">
+                <span class="dot"></span> Não verificado
+              </label>
+            </div>
+            <div class="error-text">Selecione a situação do licenciamento.</div>
+          </div>
+          <div class="field-grid">
+            <div class="field" data-field="anoLicenciamento">
+              <label for="anoLicenciamentoCaminhao">Ano do licenciamento *</label>
+              <input type="text" id="anoLicenciamentoCaminhao" inputmode="numeric" placeholder="2026" maxlength="4">
+              <div class="error-text">Informe um ano válido.</div>
+            </div>
+            <div class="field">
+              <label for="ultimaVerificacaoCaminhao">Data da última verificação</label>
+              <input type="date" id="ultimaVerificacaoCaminhao">
+            </div>
+          </div>
+        </div>
+
+        <!-- ETAPA 3: Controle -->
+        <div class="wstep" data-step="3">
+          <div class="step-head">
+            <div class="step-title">
+              <i class="fas fa-sliders-h" style="margin-right:8px;"></i>
+              Controle
+            </div>
+            <div class="step-sub">Status operacional e observações sobre o veículo.</div>
+          </div>
+          <div class="field full" style="margin-bottom:12px;">
+            <label>Situação *</label>
+            <div class="situacao-toggle">
+              <label class="situacao-opt" id="optCaminhaoAtivo"><input type="radio" name="situacaoCaminhao" id="situacaoCaminhaoAtivo" value="ativo">
+                <i class="fas fa-check-circle" style="color:var(--success);"></i> Ativo
+              </label>
+              <label class="situacao-opt" id="optCaminhaoInativo"><input type="radio" name="situacaoCaminhao" id="situacaoCaminhaoInativo" value="inativo">
+                <i class="fas fa-times-circle" style="color:var(--danger);"></i> Inativo
+              </label>
+            </div>
+          </div>
+          <div class="field full">
+            <label for="obsCaminhao">Observações</label>
+            <textarea id="obsCaminhao" placeholder="Informações adicionais sobre o veículo (opcional)"></textarea>
+          </div>
+        </div>
+
+        <!-- Navegação do Wizard -->
+        <div class="wizard-nav">
+          <button type="button" class="btn btn-ghost" data-prev id="btnVoltarCaminhao">
+            <i class="fas fa-arrow-left"></i> Voltar
+          </button>
+          <div class="wnav-spacer"></div>
+          <button type="button" class="btn btn-amber" data-next id="btnAvancarCaminhao">
+            Avançar <i class="fas fa-arrow-right"></i>
+          </button>
+          <button type="submit" class="btn btn-amber" id="btnEnviarCaminhao" style="display:none;">
+            <i class="fas fa-save"></i> Cadastrar caminhão
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="../shared/js/ui.js"></script>
+<script src="../shared/js/utils.js"></script>
+<script src="js/app.js"></script>
+<script src="js/caminhoes.js"></script>
+</body>
+</html>

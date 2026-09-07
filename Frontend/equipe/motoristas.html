@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="../img/simple-logo.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unitrans · Motoristas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Font Awesome 6 (Free) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="../shared/css/ui.css">
+</head>
+<body>
+<div class="app">
+  <div id="sidebar-mount"></div>
+  <script src="../shared/js/sidebar-engine.js"></script>
+  <script src="js/sidebar.js"></script>
+
+  <div class="main">
+    <div class="page active" id="page-motoristas">
+
+      <div class="topbar">
+        <div>
+          <div class="page-title">Motoristas</div>
+          <div class="page-date">Cadastro de motoristas disponíveis para rotas de coleta e entrega</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-amber" id="btnNovoMotorista">
+            <i class="fas fa-plus"></i>
+            Novo motorista
+          </button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="panel">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>CPF</th>
+                <th>Telefone</th>
+                <th>CNH</th>
+                <th>DT Validade</th>
+                <th>Status</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tabelaMotoristas">
+              <tr><td colspan="8" style="text-align:center;color:var(--ink-faint);">Carregando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Novo Motorista (Wizard em 4 etapas) -->
+<div class="modal-overlay" id="modalMotoristaOverlay">
+  <div class="modal" style="max-width:620px;">
+    <button class="modal-close" id="fecharModalMotorista" type="button" aria-label="Fechar">
+      <i class="fas fa-times"></i>
+    </button>
+
+    <div class="wizard-card" id="wizardCardMotorista">
+      <!-- Progresso -->
+      <div class="progress">
+        <div class="progress-step" data-step="1">
+          <div class="bar"></div>
+          <div class="circle">1</div>
+          <div class="label">Dados pessoais</div>
+        </div>
+        <div class="progress-step" data-step="2">
+          <div class="bar"></div>
+          <div class="circle">2</div>
+          <div class="label">Habilitação</div>
+        </div>
+        <div class="progress-step" data-step="3">
+          <div class="bar"></div>
+          <div class="circle">3</div>
+          <div class="label">Controle</div>
+        </div>
+      </div>
+
+      <form id="formMotorista" novalidate>
+
+        <!-- ETAPA 1: Dados pessoais -->
+        <div class="wstep" data-step="1">
+          <div class="step-head">
+            <div class="step-title">
+              <i class="fas fa-user" style="margin-right:8px;"></i>
+              Dados pessoais
+            </div>
+            <div class="step-sub">Informações básicas do motorista para identificação e contato.</div>
+          </div>
+          <div class="field-grid">
+            <div class="field full" data-field="nome">
+              <label for="nomeMotorista">Nome completo *</label>
+              <input type="text" id="nomeMotorista" placeholder="Ex.: Carlos Menezes da Silva" autocomplete="name">
+              <div class="error-text">Informe o nome completo.</div>
+            </div>
+            <div class="field" data-field="cpf">
+              <label for="cpfMotorista">CPF *</label>
+              <input type="text" id="cpfMotorista" placeholder="000.000.000-00" maxlength="14" autocomplete="off">
+              <div class="error-text">Informe um CPF válido (11 dígitos).</div>
+            </div>
+            <div class="field" data-field="telefone">
+              <label for="telefoneMotorista">Telefone *</label>
+              <input type="tel" id="telefoneMotorista" placeholder="(00) 00000-0000" maxlength="15" autocomplete="tel">
+              <div class="error-text">Informe um telefone válido (10 ou 11 dígitos).</div>
+            </div>
+            <div class="field full" data-field="endereco">
+              <label for="enderecoMotorista">Endereço *</label>
+              <input type="text" id="enderecoMotorista" placeholder="Rua, número, bairro, cidade/UF" autocomplete="street-address">
+              <div class="error-text">Informe o endereço completo.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ETAPA 2: Habilitação -->
+        <div class="wstep" data-step="2">
+          <div class="step-head">
+            <div class="step-title">
+              <i class="fas fa-car" style="margin-right:8px;"></i>
+              Habilitação
+            </div>
+            <div class="step-sub">Documentação e categorias da CNH do motorista.</div>
+          </div>
+          <div class="field-grid">
+            <div class="field" data-field="cnhNumero">
+              <label for="cnhNumeroMotorista">Número da CNH *</label>
+              <input type="text" id="cnhNumeroMotorista" placeholder="00000000000" maxlength="11" autocomplete="off">
+              <div class="error-text">Informe o número da CNH (9 a 11 dígitos).</div>
+            </div>
+            <div class="field" data-field="cnhValidade">
+              <label for="cnhValidadeMotorista">Validade da CNH *</label>
+              <input type="date" id="cnhValidadeMotorista">
+              <div class="error-text">Informe uma data de validade futura.</div>
+            </div>
+          </div>
+
+          <!-- Categorias da CNH (múltipla escolha) -->
+          <div class="field" data-field="cnhCategorias" style="margin-bottom: 8px;">
+            <label>Categorias da CNH * (selecione todas que se aplicam)</label>
+            <div class="cnh-categorias-grid" id="cnhCategoriasContainer">
+              <label class="categoria-opt"><input type="checkbox" value="A">
+                <span class="cat-label">A</span>
+                <span class="cat-desc">Motocicleta</span>
+              </label>
+              <label class="categoria-opt"><input type="checkbox" value="B">
+                <span class="cat-label">B</span>
+                <span class="cat-desc">Automóvel</span>
+              </label>
+              <label class="categoria-opt"><input type="checkbox" value="C">
+                <span class="cat-label">C</span>
+                <span class="cat-desc">Veículo de carga</span>
+              </label>
+              <label class="categoria-opt"><input type="checkbox" value="D">
+                <span class="cat-label">D</span>
+                <span class="cat-desc">Transporte de passageiros</span>
+              </label>
+              <label class="categoria-opt"><input type="checkbox" value="E">
+                <span class="cat-label">E</span>
+                <span class="cat-desc">Combinação de veículos</span>
+              </label>
+            </div>
+            <div class="categorias-resultado" id="categoriasResultado">
+              <span class="resultado-label">Selecionadas:</span>
+              <span class="resultado-valor vazio" id="categoriasSelecionadasDisplay">Nenhuma</span>
+            </div>
+            <div class="error-text">Selecione pelo menos uma categoria.</div>
+          </div>
+        </div>
+
+        <!-- ETAPA 3: Controle -->
+        <div class="wstep" data-step="3">
+          <div class="step-head">
+            <div class="step-title">
+              <i class="fas fa-sliders-h" style="margin-right:8px;"></i>
+              Controle
+            </div>
+            <div class="step-sub">Situação e status operacional do motorista.</div>
+          </div>
+          <div class="field-grid">
+            <div class="field" data-field="situacao">
+              <label>Situação *</label>
+              <div class="situacao-toggle" id="situacaoToggleMotorista">
+                <div class="situacao-opt selected" data-value="Ativo">
+                  <input type="radio" name="situacaoMotorista" value="Ativo" checked>
+                  <i class="fas fa-check-circle" style="color:var(--success);"></i> Ativo
+                </div>
+                <div class="situacao-opt" data-value="Inativo">
+                  <input type="radio" name="situacaoMotorista" value="Inativo">
+                  <i class="fas fa-times-circle" style="color:var(--danger);"></i> Inativo
+                </div>
+              </div>
+            </div>
+            <div class="field" data-field="statusMotorista">
+              <label>Status *</label>
+              <div class="status-toggle" id="statusToggleMotorista">
+                <div class="status-opt selected" data-value="disponivel">
+                  <input type="radio" name="statusMotorista" value="disponivel" checked>
+                  <span class="badge success">Disponível</span>
+                </div>
+                <div class="status-opt" data-value="viajando">
+                  <input type="radio" name="statusMotorista" value="viajando">
+                  <span class="badge info">Em rota</span>
+                </div>
+                <div class="status-opt" data-value="pendente">
+                  <input type="radio" name="statusMotorista" value="pendente">
+                  <span class="badge warning">Pendente</span>
+                </div>
+                <div class="status-opt" data-value="folga">
+                  <input type="radio" name="statusMotorista" value="folga">
+                  <span class="badge warning">Folga</span>
+                </div>
+                <div class="status-opt" data-value="inativo">
+                  <input type="radio" name="statusMotorista" value="inativo">
+                  <span class="badge danger">Inativo</span>
+                </div>
+              </div>
+            </div>
+            <div class="field full" data-field="observacoes">
+              <label for="observacoesMotorista">Observações</label>
+              <textarea id="observacoesMotorista" rows="2" placeholder="Observações adicionais sobre o motorista..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navegação do Wizard -->
+        <div class="wizard-nav">
+          <button type="button" class="btn btn-ghost" data-prev id="btnVoltarMotorista">
+            <i class="fas fa-arrow-left"></i> Voltar
+          </button>
+          <div class="wnav-spacer"></div>
+          <button type="button" class="btn btn-amber" data-next id="btnAvancarMotorista">
+            Avançar <i class="fas fa-arrow-right"></i>
+          </button>
+          <button type="submit" class="btn btn-amber" id="btnEnviarMotorista" style="display:none;">
+            <i class="fas fa-save"></i>
+            Cadastrar motorista
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="../shared/js/ui.js"></script>
+<script src="../shared/js/utils.js"></script>
+<script src="js/app.js"></script>
+<script src="js/motoristas.js"></script>
+</body>
+</html>

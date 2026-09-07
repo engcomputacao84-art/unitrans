@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="../img/simple-logo.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unitrans · Entregas & Coletas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Font Awesome 6 (Free) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="../shared/css/ui.css">
+<style>
+  .badge.b-ocorrencia { background:#FEF3C7; color:#92400E; }
+  .icon-btn.warn { color:#B45309; }
+  .icon-btn.warn:hover { background:#FEF3C7; border-color:#FDE68A; }
+  .status-cell { display:flex; align-items:center; gap:8px; }
+  .busca-bar { display:flex; justify-content:flex-end; padding:18px 20px 16px; }
+  .busca-wrap { position:relative; width:100%; max-width:300px; }
+  .busca-wrap i { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--ink-faint); font-size:12px; }
+  .busca-input {
+    width:100%; box-sizing:border-box; padding:10px 14px 10px 36px; border:1px solid var(--line); border-radius:10px;
+    font-family:'Inter',sans-serif; font-size:13.5px; color:var(--ink); background:#FAFAFA;
+    outline:none; transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .busca-input::placeholder { color:var(--ink-faint); }
+  .busca-input:focus { border-color:#94A3B8; background:#fff; box-shadow:0 0 0 3px rgba(148,163,184,.15); }
+  .busca-empty { padding:18px 20px 4px; text-align:right; color:var(--ink-faint); font-size:13.5px; display:none; }
+  .busca-empty.show { display:block; }
+  .ocorrencia-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px 24px; }
+  .ocorrencia-item .label { font-size:12px; color:var(--ink-faint); margin-bottom:2px; }
+  .ocorrencia-item .value { font-size:14px; font-weight:500; }
+  .ocorrencia-obs { background:#FFFBEB; border:1px solid #FDE68A; border-radius:10px; padding:12px 14px; }
+  .ocorrencia-obs-label { font-size:12px; font-weight:600; color:#92400E; margin-bottom:4px; }
+  .ocorrencia-obs-text { font-size:14px; color:#78350F; line-height:1.5; }
+
+  /* Tabela de cargas (accordion) */
+  .cargas-table thead th:last-child { width:44px; }
+  .cargas-table thead th.carga-status-col { width:56px; text-align:center; }
+  .carga-status-icon { text-align:center; font-size:15px; }
+  .carga-status-icon i { line-height:1; }
+  .carga-status-icon.status-ok i { color:#16A34A; }
+  .carga-status-icon.status-warn i { color:#B45309; }
+  .cargas-table tbody tr.carga-row { cursor:pointer; }
+  .cargas-table tbody tr.carga-row:hover { background:#FAFAFA; }
+  .carga-toggle-cell { text-align:center; }
+  .carga-toggle-btn {
+    background:none; border:none; cursor:pointer; padding:6px;
+    color:var(--ink-faint); font-size:14px; line-height:1;
+    display:inline-flex; align-items:center; justify-content:center;
+    transition: transform .18s ease, color .18s ease;
+  }
+  .carga-row.open .carga-toggle-btn { color:var(--ink); transform: rotate(180deg); }
+  .carga-details-row > td { padding:0; border-bottom:1px solid var(--line); }
+  .carga-details-row[hidden] { display:none; }
+  .carga-details { padding:16px 20px 22px; background:#FAFAFA; }
+  .carga-details table { background:#fff; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="sidebar-mount"></div>
+  <script src="../shared/js/sidebar-engine.js"></script>
+  <script src="js/sidebar.js"></script>
+
+  <div class="main">
+    <div class="page active" id="page-entregas">
+
+      <div class="topbar">
+        <div>
+          <div class="page-title">Entregas &amp; Coletas</div>
+          <div class="page-date">Execução das paradas em campo, por rota</div>
+        </div>
+      </div>
+      <div class="content">
+        <div class="panel">
+          <div class="busca-bar">
+            <div class="busca-wrap">
+              <i class="fas fa-search"></i>
+              <input type="text" class="busca-input" id="buscaParadas" placeholder="Buscar parada, solicitação, cliente...">
+            </div>
+          </div>
+          <div class="busca-empty" id="buscaVazia">Nenhuma parada encontrada para essa busca.</div>
+          <table class="cargas-table">
+            <thead><tr><th>Carga Entregues</th><th class="carga-status-col">Status</th><th></th></tr></thead>
+            <tbody>
+
+              <!-- ===== Carga C-0509 ===== -->
+              <tr class="carga-row" data-carga-row="C-0509">
+                <td class="mono">C-0509</td>
+                <td class="carga-status-icon"></td>
+                <td class="carga-toggle-cell">
+                  <button class="carga-toggle-btn" type="button" aria-label="Expandir carga">
+                    <i class="fas fa-chevron-down"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr class="carga-details-row" data-carga-details="C-0509" hidden>
+                <td colspan="3">
+                  <div class="carga-details">
+                    <table>
+                      <thead><tr><th>Parada</th><th>Solicitação</th><th>Cliente</th><th>Rota</th><th>Endereço</th><th>Horário</th><th>Status</th></tr></thead>
+                      <tbody>
+                        <tr data-status="concluida">
+                          <td class="mono">PT-0001</td>
+                          <td class="mono">PR-0091</td>
+                          <td>Metalúrgica Rio Preto</td>
+                          <td class="mono">RT-0512</td>
+                          <td>Av. Prestes Maia, 1840</td>
+                          <td class="mono">08:10</td>
+                          <td><span class="badge b-concluida"><i class="fas fa-check"></i> Concluída</span></td>
+                        </tr>
+                        <tr data-status="concluida">
+                          <td class="mono">PT-0002</td>
+                          <td class="mono">PR-0092</td>
+                          <td>Farmácia Bem-Estar</td>
+                          <td class="mono">RT-0512</td>
+                          <td>Rua Amazonas, 522</td>
+                          <td class="mono">08:35</td>
+                          <td><span class="badge b-concluida"><i class="fas fa-check"></i> Concluída</span></td>
+                        </tr>
+                        <tr data-status="concluida">
+                          <td class="mono">PT-0003</td>
+                          <td class="mono">PR-0093</td>
+                          <td>Confecções Del Rio</td>
+                          <td class="mono">RT-0512</td>
+                          <td>Rua Bahia, 355</td>
+                          <td class="mono">09:40</td>
+                          <td><span class="badge b-concluida"><i class="fas fa-check"></i> Concluída</span></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- ===== Carga C-0510 ===== -->
+              <tr class="carga-row" data-carga-row="C-0510">
+                <td class="mono">C-0510</td>
+                <td class="carga-status-icon"></td>
+                <td class="carga-toggle-cell">
+                  <button class="carga-toggle-btn" type="button" aria-label="Expandir carga">
+                    <i class="fas fa-chevron-down"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr class="carga-details-row" data-carga-details="C-0510" hidden>
+                <td colspan="3">
+                  <div class="carga-details">
+                    <table>
+                      <thead><tr><th>Parada</th><th>Solicitação</th><th>Cliente</th><th>Rota</th><th>Endereço</th><th>Horário</th><th>Status</th></tr></thead>
+                      <tbody>
+                        <tr data-status="concluida">
+                          <td class="mono">PT-0004</td>
+                          <td class="mono">PR-0094</td>
+                          <td>Mercado São José</td>
+                          <td class="mono">RT-0514</td>
+                          <td>Rua Piratininga, 190</td>
+                          <td class="mono">09:05</td>
+                          <td><span class="badge b-concluida"><i class="fas fa-check"></i> Concluída</span></td>
+                        </tr>
+                        <tr data-status="ocorrencia">
+                          <td class="mono">PT-0005</td>
+                          <td class="mono">PR-0095</td>
+                          <td>Distribuidora Noroeste</td>
+                          <td class="mono">RT-0513</td>
+                          <td>Rod. Euclides da Cunha, km 431</td>
+                          <td class="mono">10:20</td>
+                          <td>
+                            <div class="status-cell">
+                              <span class="badge b-ocorrencia"><i class="fas fa-exclamation-triangle"></i> Concluída com ocorrência</span>
+                              <button class="icon-btn warn btn-ver-ocorrencia"
+                                title="Ver ocorrência"
+                                data-parada="PT-0005"
+                                data-solicitacao="PR-0095"
+                                data-rota="RT-0513"
+                                data-motorista="Renato Farias"
+                                data-veiculo="DVX-1C77"
+                                data-carga="C-0510"
+                                data-cliente="Distribuidora Noroeste"
+                                data-endereco="Rod. Euclides da Cunha, km 431"
+                                data-horario="10:20"
+                                data-observacao="Endereço de difícil acesso; entrega foi concluída após contato com o cliente para nova orientação de chegada.">
+                                <i class="fas fa-exclamation-circle"></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- ===== Carga C-0511 ===== -->
+              <tr class="carga-row" data-carga-row="C-0511">
+                <td class="mono">C-0511</td>
+                <td class="carga-status-icon"></td>
+                <td class="carga-toggle-cell">
+                  <button class="carga-toggle-btn" type="button" aria-label="Expandir carga">
+                    <i class="fas fa-chevron-down"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr class="carga-details-row" data-carga-details="C-0511" hidden>
+                <td colspan="3">
+                  <div class="carga-details">
+                    <table>
+                      <thead><tr><th>Parada</th><th>Solicitação</th><th>Cliente</th><th>Rota</th><th>Endereço</th><th>Horário</th><th>Status</th></tr></thead>
+                      <tbody>
+                        <tr data-status="ocorrencia">
+                          <td class="mono">PT-0006</td>
+                          <td class="mono">PR-0096</td>
+                          <td>Mercearia Boa Vista</td>
+                          <td class="mono">RT-0515</td>
+                          <td>Av. Danilo Galeazzi, 1500</td>
+                          <td class="mono">10:15</td>
+                          <td>
+                            <div class="status-cell">
+                              <span class="badge b-ocorrencia"><i class="fas fa-exclamation-triangle"></i> Concluída com ocorrência</span>
+                              <button class="icon-btn warn btn-ver-ocorrencia"
+                                title="Ver ocorrência"
+                                data-parada="PT-0006"
+                                data-solicitacao="PR-0096"
+                                data-rota="RT-0515"
+                                data-motorista="Carlos Menezes"
+                                data-veiculo="DVX-3A21"
+                                data-carga="C-0511"
+                                data-cliente="Mercearia Boa Vista"
+                                data-endereco="Av. Danilo Galeazzi, 1500"
+                                data-horario="10:15"
+                                data-observacao="Caminhão quebrou no meio da rota. Veículo substituto foi enviado no mesmo dia e a entrega foi concluída às 14:40.">
+                                <i class="fas fa-exclamation-circle"></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Modal: detalhes da ocorrência (carga/rota + observação) -->
+      <div class="modal-overlay" id="ocorrenciaModalOverlay">
+        <div class="modal">
+          <button class="modal-close" id="fecharOcorrenciaModal" type="button" aria-label="Fechar">
+            <i class="fas fa-times"></i>
+          </button>
+          <div class="panel-head" style="padding:0 0 14px;border-bottom:1px solid var(--line);margin-bottom:16px;">
+            <div><h3 id="ocorrenciaTitulo">Ocorrência na parada</h3><div class="sub" id="ocorrenciaSub"></div></div>
+          </div>
+          <div class="ocorrencia-grid" id="ocorrenciaGrid"></div>
+          <div class="ocorrencia-obs" style="margin-top:18px;">
+            <div class="ocorrencia-obs-label"><i class="fas fa-exclamation-triangle"></i> Observação registrada</div>
+            <div class="ocorrencia-obs-text" id="ocorrenciaObsTexto"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../shared/js/ui.js"></script>
+<script src="../shared/js/utils.js"></script>
+<script src="js/app.js"></script>
+<script src="js/entregas.js"></script>
+</body>
+</html>

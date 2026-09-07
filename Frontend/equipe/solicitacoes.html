@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="../img/simple-logo.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unitrans · Solicitações</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Font Awesome 6 (Free) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="../shared/css/ui.css">
+</head>
+<body>
+<div class="app">
+  <div id="sidebar-mount"></div>
+  <script src="../shared/js/sidebar-engine.js"></script>
+  <script src="js/sidebar.js"></script>
+
+      <div class="main">
+        <div class="page active" id="page-solicitacoes">
+          <div class="topbar">
+            <div>
+              <div class="page-title">Solicitações</div>
+              <div class="page-date">
+                Aprovar ou recusar pedidos de clientes
+              </div>
+            </div>
+            <div class="topbar-actions">
+              <button class="btn btn-amber" id="openModalBtn">
+                <i class="fas fa-plus"></i>
+                Nova solicitação
+              </button>
+            </div>
+          </div>
+          <div class="content">
+            <div class="panel">
+              <div class="toolbar" id="filterToolbar">
+                <span class="chip active" data-filter="all"
+                  >Todas · <span id="filterCountAll">0</span></span
+                >
+                <span class="chip" data-filter="pendente"
+                  >Pendentes · <span id="filterCountPendente">0</span></span
+                >
+                <span class="chip" data-filter="aprovado"
+                  >Aprovadas · <span id="filterCountAprovado">0</span></span
+                >
+                <span class="chip" data-filter="em_carga"
+                  >Em carga · <span id="filterCountEmCarga">0</span></span
+                >
+                <span class="chip" data-filter="em_rota"
+                  >Em rota de entrega ·
+                  <span id="filterCountEmRota">0</span></span
+                >
+                <span class="chip" data-filter="concluido"
+                  >Concluídas · <span id="filterCountConcluido">0</span></span
+                >
+                <span class="chip" data-filter="recusado"
+                  >Recusadas · <span id="filterCountRecusado">0</span></span
+                >
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Cliente</th>
+                    <th>Endereço coleta</th>
+                    <th>Endereço entrega</th>
+                    <th>Data desejo</th>
+                    <th>Status</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Modal: Nova solicitação (wizard) -->
+          <div class="modal-overlay" id="modalOverlay">
+            <div class="modal">
+              <button class="modal-close" id="closeModalBtn" type="button" aria-label="Fechar">
+                <i class="fas fa-times"></i>
+              </button>
+              <div class="wizard-card" id="wizardCard">
+                <div class="progress">
+                  <div class="progress-step" data-step="1">
+                    <div class="bar"></div>
+                    <div class="circle">1</div>
+                    <div class="label">Solicitante</div>
+                  </div>
+                  <div class="progress-step" data-step="2">
+                    <div class="bar"></div>
+                    <div class="circle">2</div>
+                    <div class="label">Coleta</div>
+                  </div>
+                  <div class="progress-step" data-step="3">
+                    <div class="bar"></div>
+                    <div class="circle">3</div>
+                    <div class="label">Entrega</div>
+                  </div>
+                  <div class="progress-step" data-step="4">
+                    <div class="bar"></div>
+                    <div class="circle">4</div>
+                    <div class="label">Carga</div>
+                  </div>
+                  <div class="progress-step" data-step="5">
+                    <div class="bar"></div>
+                    <div class="circle">5</div>
+                    <div class="label">Revisão</div>
+                  </div>
+                </div>
+                <form id="requestForm" novalidate>
+                  <!-- etapa 1 -->
+                  <div class="wstep" data-step="1">
+                    <div class="step-head">
+                      <div class="step-title">
+                        <i class="fas fa-user" style="margin-right: 8px"></i>
+                        Informações do Solicitante
+                      </div>
+                      <div class="step-sub">Quem está fazendo o pedido.</div>
+                    </div>
+                    <div class="field-grid">
+                      <div class="field full" data-field="nome">
+                        <label for="nome">Nome ou razão social</label
+                        ><input
+                          type="text"
+                          id="nome"
+                          placeholder="Ex.: Farmácia Bem-Estar"
+                        />
+                        <div class="error-text">Informe o nome.</div>
+                      </div>
+                      <div class="field" data-field="documento">
+                        <label for="documento">CPF ou CNPJ</label
+                        ><input
+                          type="text"
+                          id="documento"
+                          placeholder="000.000.000-00"
+                        />
+                        <div class="error-text">
+                          Informe um documento válido.
+                        </div>
+                      </div>
+                      <div class="field" data-field="telefone">
+                        <label for="telefone">Telefone / WhatsApp</label
+                        ><input
+                          type="tel"
+                          id="telefone"
+                          placeholder="(17) 99999-0000"
+                        />
+                        <div class="error-text">Informe um telefone.</div>
+                      </div>
+                      <div class="field full" data-field="email">
+                        <label for="email">E-mail</label
+                        ><input
+                          type="email"
+                          id="email"
+                          placeholder="voce@email.com"
+                        />
+                        <div class="hint">Usado para enviar a confirmação.</div>
+                        <div class="error-text">Informe um e-mail válido.</div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- etapa 2 -->
+                  <div class="wstep" data-step="2">
+                    <div class="step-head">
+                      <div class="step-title">
+                        <i
+                          class="fas fa-arrow-up"
+                          style="margin-right: 8px"
+                        ></i>
+                        Local de Coleta
+                      </div>
+                      <div class="step-sub">
+                        Digite o CEP para preencher automaticamente.
+                      </div>
+                    </div>
+                    <div class="field-grid">
+                      <div class="field" data-field="cepColeta">
+                        <label for="cepColeta">CEP</label
+                        ><input
+                          type="text"
+                          id="cepColeta"
+                          placeholder="00000-000"
+                          maxlength="9"
+                        />
+                        <div class="cep-status" id="cepStatusColeta"></div>
+                        <div class="error-text">Informe o CEP de coleta.</div>
+                      </div>
+                      <div class="field" data-field="numeroColeta">
+                        <label for="numeroColeta">Número</label
+                        ><input
+                          type="text"
+                          id="numeroColeta"
+                          placeholder="Ex.: 123"
+                        />
+                        <div class="error-text">Informe o número.</div>
+                      </div>
+                      <div class="field full" data-field="enderecoColeta">
+                        <label for="enderecoColeta">Endereço</label
+                        ><input
+                          type="text"
+                          id="enderecoColeta"
+                          placeholder="Rua, bairro"
+                        />
+                        <div class="error-text">Informe o endereço.</div>
+                      </div>
+                      <div class="field" data-field="cidadeColeta">
+                        <label for="cidadeColeta">Cidade</label
+                        ><input
+                          type="text"
+                          id="cidadeColeta"
+                          placeholder="Ex.: Votuporanga"
+                        />
+                        <div class="error-text">Informe a cidade.</div>
+                      </div>
+                      <div class="field" data-field="ufColeta">
+                        <label for="ufColeta">UF</label
+                        ><input
+                          type="text"
+                          id="ufColeta"
+                          placeholder="SP"
+                          maxlength="2"
+                          style="text-transform: uppercase"
+                        />
+                        <div class="error-text">Informe a UF.</div>
+                      </div>
+                      <div class="field full">
+                        <label for="referenciaColeta">Complemento
+                          <span
+                            style="font-weight: 400; color: var(--ink-faint)"
+                            >(opcional)</span
+                          ></label
+                        ><input
+                          type="text"
+                          id="referenciaColeta"
+                          placeholder="portão azul"
+                        />
+                      </div>
+                    </div>
+                    <hr class="divider" />
+                    <div class="subsection-title">
+                      <i class="fas fa-clock"></i> Quando podemos coletar?
+                    </div>
+                    <div class="field-grid">
+                      <div class="field" data-field="dataColeta">
+                        <label for="dataColeta">Data desejada</label
+                        ><input type="date" id="dataColeta" />
+                        <div class="error-text">Escolha uma data.</div>
+                      </div>
+                      <div class="field" data-field="periodoColeta">
+                        <label for="periodoColeta">Período desejado</label>
+                        <select id="periodoColeta">
+                          <option value="">Selecione...</option>
+                          <option value="manha">Manhã (7h até 12h)</option>
+                          <option value="tarde">Tarde (13h às 18h)</option>
+                          <option value="sem_preferencia">
+                            Sem preferência
+                          </option>
+                        </select>
+                        <div class="error-text">Selecione um período.</div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- etapa 3 -->
+                  <div class="wstep" data-step="3">
+                    <div class="step-head">
+                      <div class="step-title">
+                        <i
+                          class="fas fa-arrow-down"
+                          style="margin-right: 8px"
+                        ></i>
+                        Local de Entrega
+                      </div>
+                      <div class="step-sub">
+                        Digite o CEP para preencher automaticamente.
+                      </div>
+                    </div>
+                    <div class="field-grid">
+                      <div class="field" data-field="cepEntrega">
+                        <label for="cepEntrega">CEP</label
+                        ><input
+                          type="text"
+                          id="cepEntrega"
+                          placeholder="00000-000"
+                          maxlength="9"
+                        />
+                        <div class="cep-status" id="cepStatusEntrega"></div>
+                        <div class="error-text">Informe o CEP de entrega.</div>
+                      </div>
+                      <div class="field" data-field="numeroEntrega">
+                        <label for="numeroEntrega">Número</label
+                        ><input
+                          type="text"
+                          id="numeroEntrega"
+                          placeholder="Ex.: 1589"
+                        />
+                        <div class="error-text">Informe o número.</div>
+                      </div>
+                      <div class="field full" data-field="enderecoEntrega">
+                        <label for="enderecoEntrega">Endereço</label
+                        ><input
+                          type="text"
+                          id="enderecoEntrega"
+                          placeholder="Rua, bairro"
+                        />
+                        <div class="error-text">Informe o endereço.</div>
+                      </div>
+                      <div class="field" data-field="cidadeEntrega">
+                        <label for="cidadeEntrega">Cidade</label
+                        ><input
+                          type="text"
+                          id="cidadeEntrega"
+                          placeholder="Ex.: Nhandeara"
+                        />
+                        <div class="error-text">Informe a cidade.</div>
+                      </div>
+                      <div class="field" data-field="ufEntrega">
+                        <label for="ufEntrega">UF</label
+                        ><input
+                          type="text"
+                          id="ufEntrega"
+                          placeholder="SP"
+                          maxlength="2"
+                          style="text-transform: uppercase"
+                        />
+                        <div class="error-text">Informe a UF.</div>
+                      </div>
+                      <div class="field full">
+                        <label for="referenciaEntrega">Complemento
+                          <span
+                            style="font-weight: 400; color: var(--ink-faint)"
+                            >(opcional)</span
+                          ></label
+                        ><input
+                          type="text"
+                          id="referenciaEntrega"
+                          placeholder="portão azul"
+                        />
+                      </div>
+                    </div>
+                    <hr class="divider" />
+                    <div class="subsection-title">
+                      <i class="fas fa-clock"></i> Quando a carga deve chegar?
+                    </div>
+                    <div class="field-grid">
+                      <div class="field" data-field="dataEntrega">
+                        <label for="dataEntrega">Data desejada</label
+                        ><input type="date" id="dataEntrega" />
+                        <div class="error-text">Escolha uma data.</div>
+                      </div>
+                      <div class="field" data-field="periodoEntrega">
+                        <label for="periodoEntrega">Período desejado</label>
+                        <select id="periodoEntrega">
+                          <option value="">Selecione...</option>
+                          <option value="manha">Manhã (7h às 12h)</option>
+                          <option value="tarde">Tarde (13h às 18h)</option>
+                          <option value="sem_preferencia">
+                            Sem preferência
+                          </option>
+                        </select>
+                        <div class="error-text">Selecione um período.</div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- etapa 4 -->
+                  <div class="wstep" data-step="4">
+                    <div class="step-head">
+                      <div class="step-title">
+                        <i
+                          class="fas fa-box"
+                          style="margin-right: 8px"
+                        ></i>
+                        Detalhes da Carga
+                      </div>
+                      <div class="step-sub">
+                        Informe o que será transportado.
+                      </div>
+                    </div>
+                    <div class="field-grid">
+                      <div class="field full" data-field="tipoCarga">
+                        <label for="tipoCarga">Tipo de carga</label>
+                        <select id="tipoCarga">
+                          <option value="">Selecione…</option>
+                          <option value="moveis">Móveis</option>
+                          <option value="eletrodomesticos">
+                            Eletrodomésticos
+                          </option>
+                          <option value="materiais-construcao">
+                            Materiais de construção
+                          </option>
+                          <option value="documentos">Documentos</option>
+                          <option value="pecas-mercadorias">
+                            Peças / mercadorias
+                          </option>
+                          <option value="outros">Outros</option>
+                        </select>
+                        <div class="error-text">Selecione o tipo.</div>
+                      </div>
+
+                      <div class="field">
+                        <label for="peso">Peso aprox. (kg)
+                          <span
+                            style="font-weight: 400; color: var(--ink-faint)"
+                            >(opcional)</span
+                          >
+                        </label>
+                        <input
+                          type="number"
+                          id="peso"
+                          min="0"
+                          placeholder="150"
+                        />
+                      </div>
+
+                      <div class="field">
+                        <label for="valorDeclarado">Valor declarado (R$)
+                          <span
+                            style="font-weight: 400; color: var(--ink-faint)"
+                            >(opcional)</span
+                          >
+                        </label>
+                        <input
+                          type="number"
+                          id="valorDeclarado"
+                          min="0"
+                          placeholder="150"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <!-- etapa 5 -->
+                  <div class="wstep" data-step="5">
+                    <div class="step-head">
+                      <div class="step-title">
+                        <i
+                          class="fas fa-check-circle"
+                          style="margin-right: 8px"
+                        ></i>
+                        Revisão e Observação
+                      </div>
+                      <div class="step-sub">
+                        Confira os dados antes de registrar.
+                      </div>
+                    </div>
+                    <div class="field full">
+                      <label for="observacoes">Observações
+                        <span style="font-weight: 400; color: var(--ink-faint)"
+                          >(opcional)</span
+                        ></label
+                      ><textarea
+                        id="observacoes"
+                        placeholder="Instruções especiais, fragilidade, etc."
+                      ></textarea>
+                    </div>
+                    <hr class="divider" />
+                    <div class="review-block">
+                      <div class="review-block-title">
+                        <i class="fas fa-user"></i> Solicitante
+                      </div>
+                      <div class="review-list" id="reviewSolicitante"></div>
+                    </div>
+                    <div class="review-block">
+                      <div class="review-block-title">
+                        <i class="fas fa-arrow-up"></i> Coleta
+                      </div>
+                      <div class="review-list" id="reviewColeta"></div>
+                    </div>
+                    <div class="review-block">
+                      <div class="review-block-title">
+                        <i class="fas fa-arrow-down"></i> Entrega
+                      </div>
+                      <div class="review-list" id="reviewEntrega"></div>
+                    </div>
+                    <div class="review-block">
+                      <div class="review-block-title">
+                        <i class="fas fa-box"></i> Carga
+                      </div>
+                      <div class="review-list" id="reviewCarga"></div>
+                    </div>
+                  </div>
+                  <div class="wizard-nav">
+                    <button
+                      type="button"
+                      class="btn btn-ghost"
+                      data-prev
+                      id="btnVoltar"
+                    >
+                      <i class="fas fa-arrow-left"></i> Voltar
+                    </button>
+                    <div class="wnav-spacer"></div>
+                    <button
+                      type="button"
+                      class="btn btn-amber"
+                      data-next
+                      id="btnAvancar"
+                    >
+                      Avançar <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button
+                      type="submit"
+                      class="btn btn-amber"
+                      id="btnEnviar"
+                      style="display: none"
+                    >
+                      <i class="fas fa-save"></i> Registrar solicitação
+                    </button>
+                  </div>
+                </form>
+              </div>
+              <!-- confirm -->
+              <div class="confirm" id="confirmView">
+                <div class="confirm-icon">
+                  <i
+                    class="fas fa-check-circle"
+                    style="font-size: 32px; color: var(--success)"
+                  ></i>
+                </div>
+                <h2>Solicitação registrada</h2>
+                <p>
+                  O pedido foi adicionado à lista de solicitações, aguardando
+                  aprovação.
+                </p>
+                <div class="protocol">
+                  <div class="lbl">Protocolo</div>
+                  <div class="val" id="protocolNum">SL-0000</div>
+                </div>
+                <div class="summary-list" id="summaryList"></div>
+                <button class="btn btn-ghost" id="btnNovaOutra">
+                  <i class="fas fa-plus"></i> Registrar outra solicitação
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal: Recusa -->
+          <div class="modal-overlay" id="rejectModal">
+            <div class="modal">
+              <button class="modal-close" id="closeRejectBtn" type="button" aria-label="Fechar">
+                <i class="fas fa-times"></i>
+              </button>
+              <div class="step-head">
+                <div class="step-title">
+                  <i class="fas fa-times-circle" style="margin-right: 8px"></i>
+                  Motivo da recusa
+                </div>
+                <div class="step-sub">
+                  Informe o motivo para recusar esta solicitação.
+                </div>
+              </div>
+              <div class="field full">
+                <label for="motivoRecusa">Motivo</label>
+                <textarea
+                  id="motivoRecusa"
+                  placeholder="Ex.: rota indisponível, horário incompatível..."
+                ></textarea>
+              </div>
+              <div class="wizard-nav">
+                <button type="button" class="btn btn-ghost" id="cancelRejectBtn">
+                  <i class="fas fa-times"></i> Cancelar
+                </button>
+                <div class="wnav-spacer"></div>
+                <button type="button" class="btn btn-amber" id="confirmRejectBtn">
+                  <i class="fas fa-check"></i> Confirmar recusa
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal: Detalhamento da solicitação (leitura) -->
+          <div class="modal-overlay" id="detalheModalOverlay">
+            <div class="modal modal-detalhe">
+              <button class="modal-close" id="closeDetalheBtn" type="button" aria-label="Fechar">
+                <i class="fas fa-times"></i>
+              </button>
+              <div class="detalhe-content">
+                <div class="detalhe-header">
+                  <div>
+                    <span class="detalhe-id" id="detalheId">SL-0000</span>
+                    <span class="detalhe-status" id="detalheStatus"
+                      >Pendente</span
+                    >
+                  </div>
+                  <div>
+                    <span style="font-size: 13px; color: var(--ink-soft)"
+                      ><i class="far fa-clock"></i> Criado em:
+                      <span id="detalheCriado">—</span></span
+                    >
+                  </div>
+                </div>
+                <div class="detalhe-grid">
+                  <div class="detalhe-col">
+                    <div class="detalhe-card">
+                      <div class="detalhe-card-title">
+                        <i class="fas fa-user"></i> Solicitante
+                      </div>
+                      <div
+                        class="detalhe-card-body"
+                        id="detalheSolicitante"
+                      ></div>
+                    </div>
+                    <div class="detalhe-card">
+                      <div class="detalhe-card-title">
+                        <i class="fas fa-arrow-up"></i> Coleta
+                      </div>
+                      <div class="detalhe-card-body" id="detalheColeta"></div>
+                    </div>
+                  </div>
+                  <div class="detalhe-col">
+                    <div class="detalhe-card">
+                      <div class="detalhe-card-title">
+                        <i class="fas fa-arrow-down"></i> Entrega
+                      </div>
+                      <div class="detalhe-card-body" id="detalheEntrega"></div>
+                    </div>
+                    <div class="detalhe-card">
+                      <div class="detalhe-card-title">
+                        <i class="fas fa-box"></i> Carga
+                      </div>
+                      <div class="detalhe-card-body" id="detalheCarga"></div>
+                    </div>
+                    <div class="detalhe-card">
+                      <div class="detalhe-card-title">
+                        <i class="fas fa-comment"></i> Observações
+                      </div>
+                      <div
+                        class="detalhe-card-body"
+                        id="detalheObs"
+                        style="padding: 10px 14px; font-size: 13px"
+                      >
+                        —
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="detalhe-footer">
+                  <span class="detalhe-criado"></span>
+                  <button class="btn btn-ghost btn-sm" id="detalheFechar">
+                    <i class="fas fa-times"></i> Fechar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="../shared/js/ui.js"></script>
+<script src="../shared/js/utils.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/solicitacoes.js"></script>
+  </body>
+</html>

@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="img/simple-logo.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unitrans · Criar conta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root{
+    --asphalt-950:#12151A;
+    --asphalt-900:#181C22;
+    --asphalt-800:#232830;
+    --asphalt-700:#2E3540;
+    --paper:#F2F3EF;
+    --paper-card:#FFFFFF;
+    --ink:#1B1E23;
+    --ink-soft:#6B7178;
+    --ink-faint:#9AA0A6;
+    --line:#E3E4DE;
+    --blue:#1E49E2;
+    --blue-bright:#3E7BFF;
+    --blue-soft:#E8EDFC;
+    --blue-text:#1638A6;
+    --green:#2C9A63;
+    --green-soft:#E4F5EC;
+    --red:#C6543F;
+    --red-soft:#F8E9E6;
+    --radius:12px;
+    --font-display:'Space Grotesk',sans-serif;
+    --font-body:'Inter',sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;}
+  html,body{height:100%;}
+  body{
+    font-family:var(--font-body);
+    color:var(--ink);
+    background:var(--paper);
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+  button{font-family:inherit;}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
+  }
+
+  .screen{
+    display:grid;
+    grid-template-columns:1.15fr 1fr;
+    min-height:100vh;
+  }
+
+  /* -------- Left: brand panel (mesmo do login) -------- */
+  .brand-panel{
+    position:relative;
+    background:linear-gradient(175deg, var(--asphalt-950) 0%, var(--asphalt-900) 55%, var(--asphalt-800) 100%);
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding:48px 56px;
+    overflow:hidden;
+    isolation:isolate;
+  }
+  .brand-grid{
+    position:absolute; inset:-2px;
+    z-index:0;
+    background-image:
+      linear-gradient(rgba(150,175,255,0.10) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(150,175,255,0.10) 1px, transparent 1px);
+    background-size:34px 34px;
+    -webkit-mask-image:radial-gradient(circle at 68% 78%, #000 0%, rgba(0,0,0,0.65) 35%, transparent 78%);
+    mask-image:radial-gradient(circle at 68% 78%, #000 0%, rgba(0,0,0,0.65) 35%, transparent 78%);
+    animation:gridDrift 26s linear infinite;
+  }
+  @keyframes gridDrift{
+    0%{ background-position:0 0; }
+    100%{ background-position:34px 68px; }
+  }
+  .brand-glow{
+    position:absolute; z-index:0;
+    width:640px; height:640px;
+    right:-160px; bottom:-220px;
+    background:radial-gradient(circle, rgba(62,123,255,0.35), transparent 68%);
+    filter:blur(4px);
+    pointer-events:none;
+  }
+  .brand-panel::after{
+    content:"";
+    position:absolute; z-index:0;
+    left:0; right:0; bottom:56px;
+    height:2px;
+    background:repeating-linear-gradient(90deg, rgba(255,255,255,0.14) 0 28px, transparent 28px 52px);
+  }
+  .brand-top{ position:relative; z-index:2; opacity:0; animation:fadeIn .6s ease .05s forwards; }
+  .brand-logo-row{ display:flex; align-items:center; gap:10px; }
+  .brand-logo-row img{ height:30px; width:auto; display:block; filter:brightness(0) invert(1); opacity:.95; }
+  .brand-copy{ position:relative; z-index:2; max-width:430px; opacity:0; animation:fadeSlideUp .7s cubic-bezier(.2,.7,.2,1) .15s forwards; }
+  .brand-copy .eyebrow{
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    letter-spacing:.4px;
+    color:#9DB4FF;
+    margin-bottom:14px;
+    display:block;
+  }
+  .brand-copy h1{
+    font-family:var(--font-display);
+    font-size:34px;
+    line-height:1.2;
+    font-weight:700;
+    margin-bottom:14px;
+    letter-spacing:-.2px;
+  }
+  .brand-copy p{
+    font-size:14.5px;
+    line-height:1.65;
+    color:#B9BFC9;
+  }
+  .brand-truck{
+    position:relative; z-index:1;
+    margin:8px -8px -12px auto;
+    width:min(560px, 92%);
+    display:block;
+    filter:drop-shadow(0 22px 34px rgba(0,0,0,0.55)) drop-shadow(0 0 46px rgba(62,123,255,0.32));
+    opacity:0;
+    animation:truckIn 1s cubic-bezier(.2,.7,.2,1) .25s forwards, truckFloat 5s ease-in-out 1.25s infinite;
+  }
+  @keyframes truckIn{
+    from{ opacity:0; transform:translateX(26px) translateY(6px); }
+    to{ opacity:1; transform:translateX(0) translateY(0); }
+  }
+  @keyframes truckFloat{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(-9px); }
+  }
+  .brand-bottom{ position:relative; z-index:2; display:flex; gap:28px; opacity:0; animation:fadeIn .6s ease .5s forwards; }
+  .bb-stat .num{ font-family:var(--font-display); font-size:20px; font-weight:700; }
+  .bb-stat .lbl{ font-size:12px; color:#8B93A0; margin-top:2px; }
+
+  @keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+  @keyframes fadeSlideUp{ from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
+
+  /* -------- Right: form panel -------- */
+  .form-panel{
+    position:relative;
+    min-width:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px;
+    background:
+      linear-gradient(rgba(27,30,35,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(27,30,35,0.035) 1px, transparent 1px),
+      var(--paper);
+    background-size:34px 34px, 34px 34px, auto;
+  }
+  .form-wrap{
+    position:relative; z-index:1;
+    width:100%; max-width:480px;
+    opacity:0;
+    animation:fadeSlideUp .6s cubic-bezier(.2,.7,.2,1) .12s forwards;
+  }
+  .form-wrap .mobile-logo{ display:none; }
+
+  .form-card{
+    background:var(--paper-card);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:30px 32px 26px;
+    box-shadow:0 1px 2px rgba(20,23,28,0.04), 0 18px 40px -18px rgba(20,23,28,0.16);
+  }
+
+  .form-head{ margin-bottom:22px; }
+  .form-head h2{
+    font-family:var(--font-display);
+    font-size:22px;
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  .form-head p{ font-size:13.5px; color:var(--ink-soft); }
+
+  .field{ display:flex; flex-direction:column; gap:4px; margin-bottom:16px; }
+  .field.full{ grid-column:1 / -1; }
+  .field label{
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .field input{
+    width:100%;
+    padding:11px 13px;
+    border:1px solid var(--line);
+    border-radius:9px;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--ink);
+    background:var(--paper-card);
+    outline:none;
+    transition:border-color .12s ease, box-shadow .12s ease;
+  }
+  .field input::placeholder{ color:var(--ink-faint); }
+  .field input:focus{
+    border-color:var(--blue);
+    box-shadow:0 0 0 3px var(--blue-soft);
+  }
+  .field-pass{ position:relative; }
+  .toggle-pass{
+    position:absolute;
+    right:8px; top:29px;
+    width:26px; height:26px;
+    display:flex; align-items:center; justify-content:center;
+    background:none; border:none; cursor:pointer; border-radius:6px;
+    color:var(--ink-faint); font-size:14px;
+    padding:0;
+  }
+  .toggle-pass:hover{ color:var(--ink-soft); background:var(--paper); }
+
+  .field .error-text{ font-size:11px; color:var(--red); display:none; margin-top:2px; }
+  .field.invalid input{ border-color:var(--red); }
+  .field.invalid .error-text{ display:block; }
+  .cep-status{ font-size:11px; color:var(--ink-faint); margin-top:2px; }
+  .cep-status.loading{ color:var(--blue-text); }
+  .cep-status.error{ color:var(--red); }
+
+  .field-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  .error-banner{
+    display:none;
+    align-items:flex-start;
+    gap:9px;
+    background:var(--red-soft);
+    color:#8B3B2C;
+    border:1px solid #EAC5BC;
+    border-radius:9px;
+    padding:10px 12px;
+    font-size:13px;
+    margin-bottom:16px;
+    line-height:1.45;
+  }
+  .error-banner.show{ display:flex; animation:shake .32s ease; }
+  .error-banner svg{ flex-shrink:0; margin-top:1px; }
+  @keyframes shake{
+    0%,100%{ transform:translateX(0); }
+    25%{ transform:translateX(-4px); }
+    75%{ transform:translateX(4px); }
+  }
+
+  /* -------- Progresso do wizard -------- */
+  .progress{ display:flex; align-items:flex-start; margin-bottom:24px; }
+  .progress-step{ display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; position:relative; }
+  .progress-step .circle{
+    width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-mono); font-size:11px; font-weight:600; background:var(--paper-card);
+    border:1.5px solid var(--line); color:var(--ink-faint); transition:all .15s; z-index:1;
+  }
+  .progress-step .label{ font-size:10px; font-weight:600; color:var(--ink-faint); text-align:center; line-height:1.2; max-width:78px; }
+  .progress-step .bar{
+    position:absolute; top:13px; left:calc(50% + 13px); right:calc(-50% + 13px); height:2px;
+    background:var(--line); z-index:0;
+  }
+  .progress-step:last-child .bar{ display:none; }
+  .progress-step.active .circle{ background:var(--blue); border-color:var(--blue); color:#fff; }
+  .progress-step.active .label{ color:var(--ink); }
+  .progress-step.done .circle{ background:var(--green); border-color:var(--green); color:#fff; }
+  .progress-step.done .bar{ background:var(--green); }
+
+  .wstep{ display:none; }
+  .wstep.active{ display:block; animation:fadeStep .18s ease; }
+  @keyframes fadeStep{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+
+  .step-head{ margin-bottom:14px; }
+  .step-title{ font-family:var(--font-display); font-size:15.5px; font-weight:700; margin:0 0 2px; }
+  .step-sub{ font-size:12.5px; color:var(--ink-soft); }
+
+  /* -------- Tipo de pessoa -------- */
+  .tipo-pessoa-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:6px; }
+  .tipo-pessoa-card{
+    border:1.5px solid var(--line); border-radius:10px; padding:14px; cursor:pointer;
+    display:flex; align-items:center; gap:10px; background:var(--paper-card);
+    transition:border-color .12s ease, background .12s ease; position:relative;
+  }
+  .tipo-pessoa-card:hover{ border-color:var(--blue); }
+  .tipo-pessoa-card.selected{ border-color:var(--blue); background:var(--blue-soft); }
+  .tipo-pessoa-card .tp-icon{
+    width:34px; height:34px; border-radius:8px; background:#fff; border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; color:var(--ink-soft);
+  }
+  .tipo-pessoa-card.selected .tp-icon{ border-color:var(--blue); color:var(--blue); }
+  .tipo-pessoa-card .tp-label{ font-family:var(--font-display); font-size:13px; font-weight:600; display:block; }
+  .tipo-pessoa-card .tp-sub{ font-size:11px; color:var(--ink-soft); margin-top:1px; }
+  .tipo-pessoa-card .tp-radio{
+    position:absolute; top:11px; right:11px; width:15px; height:15px; border-radius:50%;
+    border:1.5px solid var(--line); background:#fff; flex-shrink:0;
+  }
+  .tipo-pessoa-card.selected .tp-radio{ border-color:var(--blue); background:var(--blue); box-shadow:inset 0 0 0 3px #fff; }
+  .pj-fields, .pf-fields{ display:none; }
+  .pj-fields.active, .pf-fields.active{ display:block; }
+  #erroTipoPessoa{ font-size:11px; color:var(--red); margin-top:6px; display:none; }
+
+  /* -------- Navegação do wizard -------- */
+  .wizard-nav{ display:flex; justify-content:space-between; align-items:center; padding-top:16px; margin-top:4px; border-top:1px solid var(--line); }
+  .wnav-spacer{ flex:1; }
+  .btn{ font-size:13.5px; font-weight:600; padding:10px 16px; border-radius:9px; border:1px solid transparent; cursor:pointer; display:inline-flex; align-items:center; gap:7px; }
+  .btn-primary{ background:linear-gradient(135deg, var(--blue-bright), var(--blue)); color:#fff; box-shadow:0 10px 22px -10px rgba(30,73,226,0.55); }
+  .btn-primary:hover{ filter:brightness(1.06); }
+  .btn-primary:disabled{ opacity:.65; cursor:not-allowed; }
+  .btn-ghost{ background:transparent; border-color:var(--line); color:var(--ink); }
+  .btn-ghost:hover{ background:var(--paper); }
+  .btn-ghost:disabled{ opacity:.4; cursor:not-allowed; }
+
+  /* -------- Tela de sucesso -------- */
+  .success-view{ display:none; text-align:center; padding:6px 0 2px; }
+  .success-view.active{ display:block; }
+  .success-icon{
+    width:54px; height:54px; border-radius:50%; background:var(--green-soft); color:var(--green);
+    display:flex; align-items:center; justify-content:center; font-size:24px; margin:0 auto 16px;
+  }
+  .success-view h2{ font-family:var(--font-display); font-size:19px; margin-bottom:8px; }
+  .success-view p{ font-size:13.5px; color:var(--ink-soft); line-height:1.55; margin-bottom:22px; }
+
+  .login-link-row{ text-align:center; margin-top:18px; font-size:13px; color:var(--ink-soft); }
+  .login-link-row a{ color:var(--blue-text); font-weight:600; text-decoration:none; }
+  .login-link-row a:hover{ text-decoration:underline; }
+
+  @media (max-width: 880px){
+    .screen{ grid-template-columns:1fr; }
+    .brand-panel{ display:none; }
+    .form-panel{ padding:28px 20px; align-items:flex-start; padding-top:40px; }
+    .form-wrap .mobile-logo{ display:flex; align-items:center; gap:9px; margin-bottom:28px; }
+    .form-wrap .mobile-logo img{ height:28px; }
+    .form-card{ padding:24px 20px 20px; }
+    .field-grid, .tipo-pessoa-grid{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="screen">
+
+  <!-- Brand panel -->
+  <div class="brand-panel">
+    <div class="brand-grid"></div>
+    <div class="brand-glow"></div>
+
+    <div class="brand-top">
+      <div class="brand-logo-row">
+        <img src="img/logo.png" alt="Unitrans">
+      </div>
+    </div>
+
+    <div class="brand-copy">
+      <span class="eyebrow">CRIAR CONTA</span>
+      <h1>Peça coletas e acompanhe suas cargas em tempo real.</h1>
+      <p>Crie sua conta de cliente e já comece a solicitar coletas e entregas — sem precisar esperar aprovação da nossa equipe.</p>
+    </div>
+
+    <img class="brand-truck" src="img/truck-hero.png" alt="Caminhão Unitrans em movimento">
+  </div>
+
+  <!-- Form panel -->
+  <div class="form-panel">
+    <div class="form-wrap">
+
+      <div class="mobile-logo">
+        <img src="img/logo.png" alt="Unitrans">
+      </div>
+
+      <div class="form-card">
+
+        <!-- ===================== WIZARD DE CADASTRO ===================== -->
+        <div id="wizardView">
+
+          <div class="form-head">
+            <h2>Criar conta</h2>
+            <p>Leva menos de 2 minutos. Depois de criar, você já entra direto no painel.</p>
+          </div>
+
+          <div class="error-banner" id="errorBanner">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+            <span id="errorText">Não foi possível concluir o cadastro.</span>
+          </div>
+
+          <div class="progress">
+            <div class="progress-step" data-step="1"><div class="bar"></div><div class="circle">1</div><div class="label">Tipo</div></div>
+            <div class="progress-step" data-step="2"><div class="bar"></div><div class="circle">2</div><div class="label">Identificação</div></div>
+            <div class="progress-step" data-step="3"><div class="bar"></div><div class="circle">3</div><div class="label">Acesso</div></div>
+            <div class="progress-step" data-step="4"><div class="bar"></div><div class="circle">4</div><div class="label">Endereço</div></div>
+          </div>
+
+          <form id="formCadastro" novalidate>
+
+            <!-- ETAPA 1: Tipo de pessoa -->
+            <div class="wstep" data-step="1">
+              <div class="step-head">
+                <div class="step-title">Tipo de cadastro</div>
+                <div class="step-sub">Você vai contratar como pessoa física ou empresa?</div>
+              </div>
+              <div class="tipo-pessoa-grid">
+                <label class="tipo-pessoa-card" id="cardPF" for="tipoPF">
+                  <span class="tp-icon"><i class="fas fa-user"></i></span>
+                  <span>
+                    <span class="tp-label">Pessoa Física</span>
+                    <span class="tp-sub">CPF</span>
+                  </span>
+                  <span class="tp-radio"></span>
+                  <input type="radio" name="tipoPessoa" id="tipoPF" value="PF" style="display:none;">
+                </label>
+                <label class="tipo-pessoa-card" id="cardPJ" for="tipoPJ">
+                  <span class="tp-icon"><i class="fas fa-building"></i></span>
+                  <span>
+                    <span class="tp-label">Pessoa Jurídica</span>
+                    <span class="tp-sub">CNPJ</span>
+                  </span>
+                  <span class="tp-radio"></span>
+                  <input type="radio" name="tipoPessoa" id="tipoPJ" value="PJ" style="display:none;">
+                </label>
+              </div>
+              <div id="erroTipoPessoa">Selecione o tipo de cadastro.</div>
+            </div>
+
+            <!-- ETAPA 2: Identificação -->
+            <div class="wstep" data-step="2">
+              <div class="step-head">
+                <div class="step-title">Identificação</div>
+                <div class="step-sub">Dados de identificação, conforme o tipo escolhido.</div>
+              </div>
+              <!-- PF -->
+              <div class="pf-fields" id="fieldsPF">
+                <div class="field" data-field="pfNome">
+                  <label for="pfNome">Nome completo *</label>
+                  <input type="text" id="pfNome" placeholder="Ex: João da Silva">
+                  <div class="error-text">Informe o nome completo.</div>
+                </div>
+                <div class="field" data-field="pfCpf">
+                  <label for="pfCpf">CPF *</label>
+                  <input type="text" id="pfCpf" placeholder="000.000.000-00" inputmode="numeric" maxlength="14">
+                  <div class="error-text">CPF inválido.</div>
+                </div>
+              </div>
+              <!-- PJ -->
+              <div class="pj-fields" id="fieldsPJ">
+                <div class="field" data-field="pjRazao">
+                  <label for="pjRazao">Razão Social *</label>
+                  <input type="text" id="pjRazao" placeholder="Ex: Metalúrgica Rio Preto Ltda">
+                  <div class="error-text">Informe a razão social.</div>
+                </div>
+                <div class="field">
+                  <label for="pjFantasia">Nome Fantasia</label>
+                  <input type="text" id="pjFantasia" placeholder="Nome fantasia (opcional)">
+                </div>
+                <div class="field" data-field="pjCnpj">
+                  <label for="pjCnpj">CNPJ *</label>
+                  <input type="text" id="pjCnpj" placeholder="00.000.000/0000-00" inputmode="numeric" maxlength="18">
+                  <div class="error-text">CNPJ inválido.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ETAPA 3: Acesso e contato -->
+            <div class="wstep" data-step="3">
+              <div class="step-head">
+                <div class="step-title">Acesso e contato</div>
+                <div class="step-sub">O e-mail e a senha serão usados para entrar no painel.</div>
+              </div>
+              <div class="field" data-field="email">
+                <label for="email">E-mail *</label>
+                <input type="email" id="email" placeholder="voce@empresa.com.br" autocomplete="username">
+                <div class="error-text" id="erroEmail">E-mail inválido.</div>
+              </div>
+              <div class="field-grid">
+                <div class="field" data-field="telefone">
+                  <label for="telefone">Telefone *</label>
+                  <input type="text" id="telefone" placeholder="(00) 00000-0000" inputmode="numeric" maxlength="15">
+                  <div class="error-text">Informe um telefone válido.</div>
+                </div>
+                <div class="field">
+                  <label for="whatsapp">WhatsApp</label>
+                  <input type="text" id="whatsapp" placeholder="(00) 00000-0000" inputmode="numeric" maxlength="15">
+                </div>
+              </div>
+              <div class="field-grid">
+                <div class="field field-pass" data-field="senha">
+                  <label for="senha">Senha *</label>
+                  <input type="password" id="senha" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+                  <button type="button" class="toggle-pass" id="toggleSenha" aria-label="Mostrar senha"><i class="fas fa-eye"></i></button>
+                  <div class="error-text">A senha precisa ter pelo menos 6 caracteres.</div>
+                </div>
+                <div class="field field-pass" data-field="confirmarSenha">
+                  <label for="confirmarSenha">Confirmar senha *</label>
+                  <input type="password" id="confirmarSenha" placeholder="Repita a senha" autocomplete="new-password">
+                  <button type="button" class="toggle-pass" id="toggleConfirmarSenha" aria-label="Mostrar senha"><i class="fas fa-eye"></i></button>
+                  <div class="error-text">As senhas não coincidem.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ETAPA 4: Endereço -->
+            <div class="wstep" data-step="4">
+              <div class="step-head">
+                <div class="step-title">Endereço</div>
+                <div class="step-sub">Endereço principal para coleta/faturamento.</div>
+              </div>
+              <div class="field-grid">
+                <div class="field">
+                  <label for="cep">CEP</label>
+                  <input type="text" id="cep" placeholder="00000-000" inputmode="numeric" maxlength="9">
+                  <div class="cep-status" id="cepStatus"></div>
+                </div>
+                <div class="field" data-field="numero">
+                  <label for="numero">Número *</label>
+                  <input type="text" id="numero" placeholder="Nº" inputmode="numeric">
+                  <div class="error-text">Informe o número.</div>
+                </div>
+              </div>
+              <div class="field" data-field="endereco">
+                <label for="endereco">Endereço *</label>
+                <input type="text" id="endereco" placeholder="Rua, Av...">
+                <div class="error-text">Informe o endereço.</div>
+              </div>
+              <div class="field-grid">
+                <div class="field">
+                  <label for="complemento">Complemento</label>
+                  <input type="text" id="complemento" placeholder="Apto, bloco, sala...">
+                </div>
+                <div class="field">
+                  <label for="bairro">Bairro</label>
+                  <input type="text" id="bairro" placeholder="Bairro">
+                </div>
+              </div>
+              <div class="field-grid">
+                <div class="field" data-field="cidade">
+                  <label for="cidade">Cidade *</label>
+                  <input type="text" id="cidade" placeholder="Cidade">
+                  <div class="error-text">Informe a cidade.</div>
+                </div>
+                <div class="field" data-field="uf">
+                  <label for="uf">UF *</label>
+                  <input type="text" id="uf" placeholder="SP" maxlength="2" style="text-transform:uppercase;">
+                  <div class="error-text">Informe a UF.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Navegação -->
+            <div class="wizard-nav">
+              <button type="button" class="btn btn-ghost" data-prev id="btnVoltar">
+                <i class="fas fa-arrow-left"></i> Voltar
+              </button>
+              <div class="wnav-spacer"></div>
+              <button type="button" class="btn btn-primary" data-next id="btnAvancar">
+                Avançar <i class="fas fa-arrow-right"></i>
+              </button>
+              <button type="submit" class="btn btn-primary" id="btnEnviar" style="display:none;">
+                <i class="fas fa-check"></i> Criar minha conta
+              </button>
+            </div>
+          </form>
+
+          <div class="login-link-row">
+            Já tem conta? <a href="login.html">Entrar</a>
+          </div>
+
+        </div>
+
+        <!-- ===================== TELA DE SUCESSO ===================== -->
+        <div class="success-view" id="successView">
+          <div class="success-icon"><i class="fas fa-check"></i></div>
+          <h2>Conta criada com sucesso!</h2>
+          <p id="successText">Agora você já pode entrar com seu e-mail e senha para começar a solicitar coletas e entregas.</p>
+          <button type="button" class="btn btn-primary" id="btnIrLogin" style="width:100%;justify-content:center;">
+            Ir para o login <i class="fas fa-arrow-right"></i>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script src="shared/js/utils.js"></script>
+<script>
+(function () {
+
+  var wizardView = document.getElementById('wizardView');
+  var successView = document.getElementById('successView');
+  var form = document.getElementById('formCadastro');
+  var errorBanner = document.getElementById('errorBanner');
+  var errorText = document.getElementById('errorText');
+
+  var cardPF = document.getElementById('cardPF');
+  var cardPJ = document.getElementById('cardPJ');
+  var radioPF = document.getElementById('tipoPF');
+  var radioPJ = document.getElementById('tipoPJ');
+  var fieldsPF = document.getElementById('fieldsPF');
+  var fieldsPJ = document.getElementById('fieldsPJ');
+  var erroTipoPessoa = document.getElementById('erroTipoPessoa');
+
+  var currentStep = 1;
+  var totalSteps = 4;
+
+  function $(id) { return document.getElementById(id); }
+
+  function getTipo() {
+    return radioPF.checked ? 'PF' : (radioPJ.checked ? 'PJ' : null);
+  }
+
+  function showError(msg) {
+    errorText.textContent = msg;
+    errorBanner.classList.add('show');
+  }
+  function hideError() {
+    errorBanner.classList.remove('show');
+  }
+
+  /* ---------- Tipo de pessoa ---------- */
+  function selecionarTipo(tipo) {
+    var isPF = tipo === 'PF';
+    radioPF.checked = isPF;
+    radioPJ.checked = !isPF;
+    cardPF.classList.toggle('selected', isPF);
+    cardPJ.classList.toggle('selected', !isPF);
+    fieldsPF.classList.toggle('active', isPF);
+    fieldsPJ.classList.toggle('active', !isPF);
+    erroTipoPessoa.style.display = 'none';
+  }
+  cardPF.addEventListener('click', function () { selecionarTipo('PF'); });
+  cardPJ.addEventListener('click', function () { selecionarTipo('PJ'); });
+
+  /* ---------- Navegação do wizard ---------- */
+  function goToStep(step) {
+    currentStep = step;
+    document.querySelectorAll('.wstep').forEach(function (el) {
+      el.classList.toggle('active', Number(el.dataset.step) === step);
+    });
+    document.querySelectorAll('.progress-step').forEach(function (el) {
+      var n = Number(el.dataset.step);
+      el.classList.toggle('active', n === step);
+      el.classList.toggle('done', n < step);
+    });
+    $('btnVoltar').disabled = step === 1;
+    $('btnAvancar').style.display = step === totalSteps ? 'none' : 'inline-flex';
+    $('btnEnviar').style.display = step === totalSteps ? 'inline-flex' : 'none';
+    hideError();
+  }
+
+  function marcarInvalido(input, invalido) {
+    if (!input) return;
+    var field = input.closest('.field');
+    if (field) field.classList.toggle('invalid', invalido);
+  }
+
+  var v = Utils.validadores;
+
+  function validateStep(step) {
+    var ok = true;
+
+    if (step === 1) {
+      var tipo = getTipo();
+      erroTipoPessoa.style.display = tipo ? 'none' : 'block';
+      return !!tipo;
+    }
+
+    var tipo = getTipo();
+    if (!tipo) { erroTipoPessoa.style.display = 'block'; return false; }
+    var isPF = tipo === 'PF';
+
+    if (step === 2) {
+      var nomeInput = isPF ? $('pfNome') : $('pjRazao');
+      var docInput = isPF ? $('pfCpf') : $('pjCnpj');
+
+      var nomeValido = nomeInput.value.trim() !== '';
+      marcarInvalido(nomeInput, !nomeValido);
+      if (!nomeValido) ok = false;
+
+      var docValido = isPF ? v.cpf(docInput.value) : v.cnpj(docInput.value);
+      marcarInvalido(docInput, !docValido);
+      if (!docValido) ok = false;
+
+      return ok;
+    }
+
+    if (step === 3) {
+      var emailInput = $('email');
+      var telInput = $('telefone');
+      var senhaInput = $('senha');
+      var confirmarInput = $('confirmarSenha');
+
+      var emailValido = v.obrigatorio(emailInput.value) && v.email(emailInput.value);
+      marcarInvalido(emailInput, !emailValido);
+      if (!emailValido) ok = false;
+
+      var telValido = v.telefone(telInput.value);
+      marcarInvalido(telInput, !telValido);
+      if (!telValido) ok = false;
+
+      var senhaValida = senhaInput.value.length >= 6;
+      marcarInvalido(senhaInput, !senhaValida);
+      if (!senhaValida) ok = false;
+
+      var confirmaValida = senhaValida && confirmarInput.value === senhaInput.value;
+      marcarInvalido(confirmarInput, !confirmaValida);
+      if (!confirmaValida) ok = false;
+
+      return ok;
+    }
+
+    if (step === 4) {
+      ['endereco', 'numero', 'cidade', 'uf'].forEach(function (campo) {
+        var el = $(campo);
+        var valido = el.value.trim() !== '';
+        marcarInvalido(el, !valido);
+        if (!valido) ok = false;
+      });
+      return ok;
+    }
+
+    return ok;
+  }
+
+  function nextStep() {
+    if (!validateStep(currentStep)) {
+      var firstInvalid = document.querySelector('.wstep.active .field.invalid');
+      if (firstInvalid) firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    if (currentStep < totalSteps) goToStep(currentStep + 1);
+  }
+  function prevStep() {
+    if (currentStep > 1) goToStep(currentStep - 1);
+  }
+
+  $('btnAvancar').addEventListener('click', nextStep);
+  $('btnVoltar').addEventListener('click', prevStep);
+
+  form.querySelectorAll('input').forEach(function (el) {
+    el.addEventListener('input', function () {
+      var field = el.closest('.field');
+      if (field) field.classList.remove('invalid');
+    });
+  });
+
+  /* ---------- Máscaras ---------- */
+  Utils.aplicarMascara($('pfCpf'), Utils.mascaras.cpf);
+  Utils.aplicarMascara($('pjCnpj'), Utils.mascaras.cnpj);
+  Utils.aplicarMascara($('telefone'), Utils.mascaras.telefone);
+  Utils.aplicarMascara($('whatsapp'), Utils.mascaras.telefone);
+  Utils.aplicarMascara($('cep'), Utils.mascaras.cep);
+  $('uf').addEventListener('input', function () {
+    this.value = this.value.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 2);
+  });
+
+  /* ---------- Mostrar/ocultar senha ---------- */
+  function ligarTogglePass(inputId, btnId) {
+    var input = $(inputId);
+    var btn = $(btnId);
+    var icon = btn.querySelector('i');
+    btn.addEventListener('click', function () {
+      var isPass = input.type === 'password';
+      input.type = isPass ? 'text' : 'password';
+      icon.classList.toggle('fa-eye', !isPass);
+      icon.classList.toggle('fa-eye-slash', isPass);
+      btn.setAttribute('aria-label', isPass ? 'Ocultar senha' : 'Mostrar senha');
+    });
+  }
+  ligarTogglePass('senha', 'toggleSenha');
+  ligarTogglePass('confirmarSenha', 'toggleConfirmarSenha');
+
+  /* ---------- Busca de CEP (ViaCEP) ---------- */
+  var cepInput = $('cep');
+  var cepStatus = $('cepStatus');
+  cepInput.addEventListener('blur', function () {
+    var cep = cepInput.value.replace(/\D/g, '');
+    if (cep.length !== 8) {
+      cepStatus.textContent = '';
+      cepStatus.className = 'cep-status';
+      return;
+    }
+    cepStatus.textContent = 'Buscando endereço...';
+    cepStatus.className = 'cep-status loading';
+
+    Utils.buscarCep(cep).then(function (data) {
+      $('endereco').value = data.logradouro || '';
+      $('bairro').value = data.bairro || '';
+      $('cidade').value = data.localidade || '';
+      $('uf').value = data.uf || '';
+      cepStatus.textContent = 'Endereço preenchido automaticamente.';
+      cepStatus.className = 'cep-status';
+      $('numero').focus();
+    }).catch(function (err) {
+      cepStatus.textContent = (err && err.message === 'CEP não encontrado')
+        ? 'CEP não encontrado.'
+        : 'Não foi possível consultar o CEP.';
+      cepStatus.className = 'cep-status error';
+    });
+  });
+
+  /* ---------- E-mails já usados (demo + cadastros anteriores nesta sessão) ---------- */
+  // Nota: sem backend real ainda, então a checagem de e-mail único é só uma
+  // simulação em sessionStorage, igual ao restante deste protótipo (login.html).
+  var EMAILS_DEMO = ['cliente@unitrans.com.br', 'motorista@unitrans.com.br', 'analista@unitrans.com.br'];
+
+  function getCadastrosSalvos() {
+    try {
+      return JSON.parse(sessionStorage.getItem('unitrans_novos_cadastros') || '[]');
+    } catch (e) { return []; }
+  }
+
+  function emailJaExiste(email) {
+    var emails = EMAILS_DEMO.concat(getCadastrosSalvos().map(function (c) { return c.email; }));
+    return emails.indexOf(email.toLowerCase()) !== -1;
+  }
+
+  /* ---------- Envio do formulário ---------- */
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    hideError();
+
+    var todasValidas = true;
+    for (var s = 1; s <= totalSteps; s++) {
+      if (!validateStep(s)) {
+        todasValidas = false;
+        goToStep(s);
+        setTimeout(function () {
+          var firstInvalid = document.querySelector('.wstep.active .field.invalid');
+          if (firstInvalid) firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+        break;
+      }
+    }
+    if (!todasValidas) return;
+
+    var email = $('email').value.trim().toLowerCase();
+    if (emailJaExiste(email)) {
+      goToStep(3);
+      showError('Este e-mail já está cadastrado. Tente entrar ou use outro e-mail.');
+      marcarInvalido($('email'), true);
+      return;
+    }
+
+    var tipo = getTipo();
+    var isPF = tipo === 'PF';
+
+    var dados = {
+      tipo: tipo,
+      nome: isPF ? $('pfNome').value.trim() : $('pjRazao').value.trim(),
+      fantasia: isPF ? '' : $('pjFantasia').value.trim(),
+      documento: isPF ? $('pfCpf').value : $('pjCnpj').value,
+      email: email,
+      senha: $('senha').value,
+      telefone: $('telefone').value,
+      whatsapp: $('whatsapp').value || '',
+      endereco: $('endereco').value.trim(),
+      numero: $('numero').value.trim(),
+      complemento: $('complemento').value || '',
+      bairro: $('bairro').value || '',
+      cidade: $('cidade').value.trim(),
+      uf: $('uf').value.trim().toUpperCase(),
+      cep: $('cep').value || ''
+    };
+
+    var btnEnviar = $('btnEnviar');
+    btnEnviar.disabled = true;
+    btnEnviar.innerHTML = 'Criando conta...';
+
+    setTimeout(function () {
+      // TODO(backend): substituir por chamada real ao endpoint de cadastro
+      // (insere em `usuarios` tipo 'C' + `clientes`, com senha_hash gerado no servidor).
+      var cadastros = getCadastrosSalvos();
+      cadastros.push(dados);
+      try { sessionStorage.setItem('unitrans_novos_cadastros', JSON.stringify(cadastros)); } catch (err) {}
+
+      wizardView.style.display = 'none';
+      successView.classList.add('active');
+      $('successText').textContent = 'Sua conta (' + dados.email + ') foi criada. Agora você já pode entrar para solicitar coletas e entregas.';
+    }, 500);
+  });
+
+  $('btnIrLogin').addEventListener('click', function () {
+    var cadastros = getCadastrosSalvos();
+    var ultimo = cadastros[cadastros.length - 1];
+    var email = ultimo ? ultimo.email : '';
+    window.location.href = 'login.html' + (email ? ('?email=' + encodeURIComponent(email)) : '');
+  });
+
+  goToStep(1);
+})();
+</script>
+
+</body>
+</html>
