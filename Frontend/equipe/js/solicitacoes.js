@@ -1,13 +1,76 @@
 (function () {
-  // ---------- DADOS MOCK (1 exemplo de cada status) ----------
-  const solicitacoes = [
-    { id: 'SL-2201', cliente: 'Metalúrgica Rio Preto Ltda', enderecoColeta: 'Av. Prestes Maia, 1840 — Centro', enderecoEntrega: 'Rua Amazonas, 522 — Vila Marin', dataDesejo: '25/08 · manhã', status: 'pendente', criadoEm: '22/08/2026 09:35', documento: '12.345.678/0001-90', telefone: '(17) 99999-1234', email: 'contato@metalurgica.com', cidadeColeta: 'Votuporanga/SP', cidadeEntrega: 'Votuporanga/SP', periodoColeta: 'Manhã', periodoEntrega: 'Tarde', tipoCarga: 'Peças', peso: '850kg', volume: '4.2m³', valorDeclarado: 'R$ 15.000', observacoes: 'Peças de alumínio' },
-    { id: 'SL-2203', cliente: 'Distribuidora Noroeste', enderecoColeta: 'Rod. Euclides da Cunha, km 431', enderecoEntrega: 'Av. Tancredo Neves, 980', dataDesejo: '25/08 · manhã', status: 'aprovado', criadoEm: '21/08/2026 16:45', documento: '11.223.344/0001-55', telefone: '(17) 97777-9012', email: 'logistica@distnoroeste.com', cidadeColeta: 'Votuporanga/SP', cidadeEntrega: 'Votuporanga/SP', periodoColeta: 'Manhã', periodoEntrega: 'Manhã', tipoCarga: 'Materiais', peso: '2.500kg', volume: '12m³', valorDeclarado: 'R$ 32.000', observacoes: 'Carga pesada' },
-    { id: 'SL-2213', cliente: 'Móveis Planejados Rio Preto', enderecoColeta: 'Rua dos Marceneiros, 415', enderecoEntrega: 'Av. Jornalista Miguel Costa, 900', dataDesejo: '26/08 · manhã', status: 'em_carga', criadoEm: '23/08/2026 09:00', documento: '22.333.444/0001-10', telefone: '(17) 93333-4444', email: 'contato@moveisplanejados.com', cidadeColeta: 'Votuporanga/SP', cidadeEntrega: 'Votuporanga/SP', periodoColeta: 'Manhã', periodoEntrega: 'Manhã', tipoCarga: 'Móveis', peso: '620kg', volume: '9m³', valorDeclarado: 'R$ 18.500', observacoes: 'Armários e guarda-roupas embalados' },
-    { id: 'SL-2214', cliente: 'Eletro Center Votuporanga', enderecoColeta: 'Av. Brasil, 640', enderecoEntrega: 'Rua Sete de Setembro, 210', dataDesejo: '26/08 · tarde', status: 'em_rota', criadoEm: '23/08/2026 09:40', documento: '55.222.111/0001-45', telefone: '(17) 93555-1122', email: 'vendas@eletrocenter.com', cidadeColeta: 'Votuporanga/SP', cidadeEntrega: 'Votuporanga/SP', periodoColeta: 'Tarde', periodoEntrega: 'Tarde', tipoCarga: 'Eletrodomésticos', peso: '310kg', volume: '5.5m³', valorDeclarado: 'R$ 9.800', observacoes: 'Geladeiras e fogões — manusear com cuidado' },
-    { id: 'SL-2215', cliente: 'Padaria Pão Quente', enderecoColeta: 'Rua Minas Gerais, 88', enderecoEntrega: 'Av. José Cheder, 1220', dataDesejo: '24/08 · manhã', status: 'concluido', criadoEm: '22/08/2026 07:15', documento: '19.888.222/0001-30', telefone: '(17) 93999-8877', email: 'padaria@paoquente.com', cidadeColeta: 'Votuporanga/SP', cidadeEntrega: 'Votuporanga/SP', periodoColeta: 'Manhã', periodoEntrega: 'Manhã', tipoCarga: 'Insumos', peso: '95kg', volume: '1.2m³', valorDeclarado: 'R$ 1.100', observacoes: 'Entrega confirmada pelo cliente' },
-    { id: 'SL-2208', cliente: 'Papelaria Escreva Bem', enderecoColeta: 'Rua Pernambuco, 77 — Centro', enderecoEntrega: 'Av. Onze de Agosto, 2140', dataDesejo: '27/08 · tarde', status: 'recusado', criadoEm: '21/08/2026 13:45', documento: '88.990.011/0001-66', telefone: '(17) 92222-9012', email: 'compras@escrevabem.com', cidadeColeta: 'Votuporanga/SP', cidadeEntrega: 'Votuporanga/SP', periodoColeta: 'Tarde', periodoEntrega: 'Tarde', tipoCarga: 'Documentos', peso: '5kg', volume: '0.2m³', valorDeclarado: 'R$ 150', observacoes: 'Cancelado por urgência', motivoRecusa: 'Cliente solicitou cancelamento' }
-  ];
+  // ---------- API real (Supabase) ----------
+  var API_BASE = 'http://localhost:3000/api';
+  // TODO: sem login/sessão ainda — id do analista fica em localStorage.
+  var analistaId = localStorage.getItem('unitrans_analista_id') || null;
+
+  var PERIODO_LABEL = { manha: 'Manhã', tarde: 'Tarde' };
+
+  function tratar(res) {
+    return res.json().then(function (corpo) {
+      if (!res.ok) throw new Error(corpo.erro || 'Erro ao comunicar com a API.');
+      return corpo;
+    });
+  }
+
+  function formatarDataCurta(dataISO) {
+    if (!dataISO) return '—';
+    var p = dataISO.split('-');
+    return p.length === 3 ? p[2] + '/' + p[1] : dataISO;
+  }
+  function formatarDataLonga(dataISO) {
+    if (!dataISO) return '—';
+    var p = dataISO.split('-');
+    return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : dataISO;
+  }
+  function formatarDataHora(iso) {
+    if (!iso) return '—';
+    var d = new Date(iso);
+    return d.toLocaleString('pt-BR');
+  }
+
+  // Converte o formato da API pro formato que esta tela já sabia renderizar.
+  function paraTela(s) {
+    return {
+      numId: s.id,
+      id: 'SL-' + String(s.id).padStart(4, '0'),
+      cliente: s.cliente,
+      enderecoColeta: s.enderecoColeta,
+      enderecoEntrega: s.enderecoEntrega,
+      dataDesejo: formatarDataCurta(s.dataDesejo) + ' · ' + (PERIODO_LABEL[s.periodoColeta] || s.periodoColeta || '—').toLowerCase(),
+      status: s.status,
+      criadoEm: formatarDataHora(s.criadoEm),
+      documento: s.documento,
+      telefone: s.telefone,
+      email: s.email,
+      cidadeColeta: '—',
+      cidadeEntrega: '—',
+      dataDesejoLonga: formatarDataLonga(s.dataDesejo),
+      periodoColeta: PERIODO_LABEL[s.periodoColeta] || s.periodoColeta,
+      periodoEntrega: PERIODO_LABEL[s.periodoEntrega] || s.periodoEntrega,
+      tipoCarga: s.tipoCarga,
+      peso: s.peso != null ? s.peso + 'kg' : '—',
+      volume: s.volume != null ? s.volume + 'm³' : '—',
+      valorDeclarado: s.valorDeclarado != null ? 'R$ ' + Number(s.valorDeclarado).toLocaleString('pt-BR') : '—',
+      observacoes: s.observacoes,
+      motivoRecusa: s.motivoRecusa
+    };
+  }
+
+  var solicitacoes = [];
+
+  function carregarSolicitacoes() {
+    return fetch(API_BASE + '/solicitacoes')
+      .then(tratar)
+      .then(function (lista) {
+        solicitacoes = lista.map(paraTela);
+      })
+      .catch(function (err) {
+        console.error(err);
+        UI.toast('Não foi possível carregar as solicitações.', 'error');
+        solicitacoes = [];
+      });
+  }
 
   // ---------- REFERÊNCIAS ----------
   const tbody = document.getElementById('tableBody');
@@ -86,12 +149,21 @@
             confirmLabel: 'Aprovar'
           }).then(function (ok) {
             if (!ok) return;
-            const item = solicitacoes.find(s => s.id === id);
-            if (item && item.status === 'pendente') {
-              item.status = 'aprovado';
+            var item = solicitacoes.find(s => s.id === id);
+            if (!item) return;
+            fetch(API_BASE + '/solicitacoes/' + item.numId + '/aprovar', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ analistaId: analistaId })
+            }).then(tratar).then(function () {
+              return carregarSolicitacoes();
+            }).then(function () {
               renderTable(currentFilter);
               UI.toast('Solicitação ' + id + ' aprovada com sucesso!');
-            }
+            }).catch(function (err) {
+              console.error(err);
+              UI.toast(err.message || 'Não foi possível aprovar a solicitação.', 'error');
+            });
           });
         } else if (action === 'reject') {
           currentRejectId = id;
@@ -114,13 +186,22 @@
     if (!currentRejectId) return;
     const motivo = motivoRecusa.value.trim() || 'Motivo não informado';
     const item = solicitacoes.find(s => s.id === currentRejectId);
-    if (item && item.status === 'pendente') {
-      item.status = 'recusado';
-      item.motivoRecusa = motivo;
+    if (!item) return;
+    fetch(API_BASE + '/solicitacoes/' + item.numId + '/recusar', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ analistaId: analistaId, motivo: motivo })
+    }).then(tratar).then(function () {
+      return carregarSolicitacoes();
+    }).then(function () {
       renderTable(currentFilter);
       UI.toast('Solicitação ' + currentRejectId + ' recusada.', 'error');
-    }
-    closeRejectModal();
+    }).catch(function (err) {
+      console.error(err);
+      UI.toast(err.message || 'Não foi possível recusar a solicitação.', 'error');
+    }).finally(function () {
+      closeRejectModal();
+    });
   });
 
   // ---------- MODAL DETALHE (leitura) ----------
@@ -337,39 +418,14 @@
       e.preventDefault();
       if (!validateStep(5)) return;
       if (!validateStep(1) || !validateStep(2) || !validateStep(3) || !validateStep(4)) return;
-      
-      // Criar nova solicitação
-      const nova = {
-        id: 'SL-' + (2200 + solicitacoes.length + 1),
-        cliente: val('nome'),
-        enderecoColeta: val('enderecoColeta') + ', ' + val('numeroColeta'),
-        enderecoEntrega: val('enderecoEntrega') + ', ' + val('numeroEntrega'),
-        dataDesejo: fmtData(val('dataColeta')),
-        status: 'pendente',
-        criadoEm: new Date().toLocaleString('pt-BR'),
-        documento: val('documento'),
-        telefone: val('telefone'),
-        email: val('email'),
-        cidadeColeta: val('cidadeColeta') + '/' + val('ufColeta'),
-        cidadeEntrega: val('cidadeEntrega') + '/' + val('ufEntrega'),
-        periodoColeta: getPeriodLabel(val('periodoColeta')),
-        periodoEntrega: getPeriodLabel(val('periodoEntrega')),
-        tipoCarga: $('tipoCarga').options[$('tipoCarga').selectedIndex].text,
-        peso: val('peso') ? val('peso') + 'kg' : '—',
-        volume: val('volume') ? val('volume') + 'm³' : '—',
-        valorDeclarado: val('valorDeclarado') ? 'R$ ' + val('valorDeclarado') : '—',
-        observacoes: val('observacoes') || ''
-      };
-      solicitacoes.push(nova);
-      
-      const protocolo = 'SL-' + (2200 + solicitacoes.length);
-      $('protocolNum').textContent = protocolo;
-      $('summaryList').innerHTML = row('Solicitante', val('nome')) + row('Coleta', val('enderecoColeta') + ', ' + val('numeroColeta')) + row('Entrega', val('enderecoEntrega') + ', ' + val('numeroEntrega')) + row('Data de coleta', fmtData(val('dataColeta')));
-      $('wizardCard').classList.add('hidden');
-      $('confirmView').classList.add('active');
-      const modal = document.querySelector('.modal');
-      if (modal) modal.scrollTop = 0;
-      renderTable(currentFilter);
+
+      // ATENÇÃO: no banco, toda solicitação pertence a um cliente já
+      // cadastrado (solicitacoes.cliente_id). Este wizard hoje coleta
+      // nome/documento/telefone/email como se fosse um cliente novo,
+      // então ainda NÃO está ligado à API — falta um passo de "buscar
+      // cliente existente" (ex.: reaproveitando a busca da tela de
+      // Clientes) antes de dar POST em /api/solicitacoes.
+      UI.toast('Cadastro de solicitação pela equipe ainda não está ligado ao banco — falta escolher o cliente já cadastrado.', 'error');
     });
   }
 
@@ -387,5 +443,5 @@
 
   // ---------- INICIALIZAR ----------
   goToStep(1);
-  renderTable('all');
+  carregarSolicitacoes().then(function () { renderTable('all'); });
 })();

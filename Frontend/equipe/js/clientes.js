@@ -1,4 +1,6 @@
 (function () {
+  var API_BASE = 'http://localhost:3000/api';
+
   var modal = document.getElementById('modalCliente');
   var tabela = document.getElementById('tabelaClientes');
   if (!modal || !tabela) return;
@@ -56,7 +58,7 @@
     editandoId = editarId || null;
     
     if (editarId) {
-      var cliente = clientes.find(function(c) { return c.id === editarId; });
+      var cliente = clientes.find(function(c) { return String(c.id) === String(editarId); });
       if (cliente) {
         var tipo = cliente.tipo;
         selecionarTipo(tipo);
@@ -468,70 +470,38 @@
           tone: 'danger'
         }).then(function (ok) {
           if (!ok) return;
-          clientes = clientes.filter(function(c) { return c.id !== id; });
-          renderTabela();
-          UI.toast('Cliente removido com sucesso!');
+          fetch(API_BASE + '/clientes/' + id, { method: 'DELETE' })
+            .then(function (res) {
+              if (!res.ok) throw new Error('Falha ao excluir (HTTP ' + res.status + ')');
+              return carregarClientes();
+            })
+            .then(function () { UI.toast('Cliente removido com sucesso!'); })
+            .catch(function (err) {
+              console.error(err);
+              UI.toast('Não foi possível excluir o cliente.');
+            });
         });
       });
     });
   }
 
-  /* ---------- Carregar clientes iniciais ---------- */
-  function carregarClientesIniciais() {
-    var rows = tabela.querySelectorAll('tr');
-    var temDados = false;
-    
-    rows.forEach(function(row) {
-      var cells = row.querySelectorAll('td');
-      if (cells.length >= 5) {
-        var nome = cells[0] ? cells[0].textContent.trim() : '';
-        var documento = cells[1] ? cells[1].textContent.trim() : '';
-        var telefone = cells[2] ? cells[2].textContent.trim() : '';
-        var endereco = cells[3] ? cells[3].textContent.trim() : '';
-        var solicitacoes = cells[4] ? parseInt(cells[4].textContent.trim()) || 0 : 0;
-        
-        if (nome && nome !== 'Nenhum cliente cadastrado.') {
-          temDados = true;
-          var tipo = documento.replace(/\D/g, '').length === 11 ? 'PF' : 'PJ';
-          
-          // Tentar extrair fantasia do nome (se estiver entre parênteses)
-          var fantasia = '';
-          var nomePrincipal = nome;
-          var match = nome.match(/^(.*?)\s*\(([^)]*)\)$/);
-          if (match) {
-            nomePrincipal = match[1].trim();
-            fantasia = match[2].trim();
-          }
-          
-          clientes.push({
-            id: 'CLI-' + String(Date.now() + clientes.length).slice(-6),
-            tipo: tipo,
-            nome: nomePrincipal,
-            fantasia: fantasia || (tipo === 'PJ' ? nomePrincipal : ''),
-            documento: documento,
-            telefone: telefone,
-            whatsapp: '',
-            email: '',
-            endereco: endereco.split(' — ')[0] || '',
-            numero: '',
-            complemento: '',
-            bairro: endereco.includes(' — ') ? endereco.split(' — ')[1] || '' : '',
-            cidade: '',
-            uf: '',
-            cep: '',
-            situacao: 'Ativo',
-            observacoes: '',
-            solicitacoes: solicitacoes
-          });
-        }
-      }
-    });
+  /* ---------- Carregar clientes do banco (via API) ---------- */
+  function carregarClientes() {
+    tabela.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--ink-faint);padding:32px 0;">Carregando...</td></tr>';
 
-    if (temDados) {
-      renderTabela();
-    } else {
-      renderTabela();
-    }
+    return fetch(API_BASE + '/clientes')
+      .then(function (res) {
+        if (!res.ok) throw new Error('Falha ao carregar clientes (HTTP ' + res.status + ')');
+        return res.json();
+      })
+      .then(function (dados) {
+        clientes = dados;
+        renderTabela();
+      })
+      .catch(function (err) {
+        console.error(err);
+        tabela.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--signal-red);padding:32px 0;">Não foi possível carregar os clientes.</td></tr>';
+      });
   }
 
   /* ---------- Envio do formulário ---------- */
@@ -567,7 +537,6 @@
     var prefixo = isPF ? 'pf' : 'pj';
 
     var dados = {
-      id: editandoId || gerarId(),
       tipo: tipo,
       nome: isPF ? document.getElementById('pfNome').value.trim() : document.getElementById('pjRazao').value.trim(),
       fantasia: isPF ? '' : document.getElementById('pjFantasia').value.trim(),
@@ -591,26 +560,38 @@
     submitBtn.disabled = true;
     submitBtn.textContent = 'Salvando...';
 
-    setTimeout(function () {
-      if (editandoId) {
-        var index = clientes.findIndex(function(c) { return c.id === editandoId; });
-        if (index !== -1) {
-          clientes[index] = dados;
-        }
-        UI.toast('Cliente atualizado com sucesso!');
-      } else {
-        clientes.push(dados);
-        UI.toast((isPF ? 'Pessoa física' : 'Pessoa jurídica') + ' cadastrada com sucesso!');
-      }
-      
-      fecharModal();
-      renderTabela();
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = '<i class="fas fa-save"></i> Salvar cliente';
-    }, 400);
+    var url = API_BASE + '/clientes' + (editandoId ? '/' + editandoId : '');
+    var metodo = editandoId ? 'PUT' : 'POST';
+
+    fetch(url, {
+      method: metodo,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dados)
+    })
+      .then(function (res) {
+        return res.json().then(function (corpo) {
+          if (!res.ok) throw new Error(corpo.erro || 'Falha ao salvar cliente.');
+          return corpo;
+        });
+      })
+      .then(function () {
+        UI.toast(editandoId
+          ? 'Cliente atualizado com sucesso!'
+          : (isPF ? 'Pessoa física' : 'Pessoa jurídica') + ' cadastrada com sucesso!');
+        fecharModal();
+        return carregarClientes();
+      })
+      .catch(function (err) {
+        console.error(err);
+        UI.toast(err.message || 'Não foi possível salvar o cliente.');
+      })
+      .finally(function () {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-save"></i> Salvar cliente';
+      });
   });
 
   // Inicializa
-  carregarClientesIniciais();
+  carregarClientes();
   goToStep(1);
 })();

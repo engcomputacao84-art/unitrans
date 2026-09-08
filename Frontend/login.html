@@ -374,31 +374,7 @@
 <script>
 (function () {
 
-  // Contas de demonstração — cada perfil aponta para uma área diferente do sistema.
-  var ACCOUNTS = [
-   {
-      role: 'cliente',
-      label: 'Cliente',
-      email: 'cliente@unitrans.com.br',
-      senha: 'cliente123',
-      redirect: 'cliente/index.html'
-    }
-   ,
-    {
-      role: 'motorista',
-      label: 'Motorista',
-      email: 'motorista@unitrans.com.br',
-      senha: 'motorista123',
-      redirect: 'motorista/carga.html'
-    },
-    {
-      role: 'equipe',
-      label: 'Equipe',
-      email: 'analista@unitrans.com.br',
-      senha: 'equipe123',
-      redirect: 'equipe/dashboard.html'
-    }
-  ];
+  var API_BASE = 'http://localhost:3000/api';
 
   var form = document.getElementById('loginForm');
   var emailInput = document.getElementById('email');
@@ -410,7 +386,7 @@
 
   // Contas criadas pela tela de cadastro.html nesta sessão (protótipo sem
   // backend real ainda — quando o cadastro passar a gravar no Supabase, isto
-  // deixa de ser necessário e o login passa a consultar a API).
+  // deixa de ser necessário e o login passa a consultar só a API).
   function getCadastrosSalvos() {
     try {
       return JSON.parse(sessionStorage.getItem('unitrans_novos_cadastros') || '[]');
@@ -441,6 +417,20 @@
     errorBanner.classList.remove('show');
   }
 
+  // Grava em localStorage o id certo pra cada perfil — é isso que as
+  // outras telas (cliente/acompanhamento.js, motorista/carga.js,
+  // motorista/rotas.js, equipe/js/solicitacoes.js) já leem hoje.
+  function salvarSessao(usuario) {
+    try {
+      sessionStorage.setItem('unitrans_role', usuario.tipo === 'C' ? 'cliente' : usuario.tipo === 'M' ? 'motorista' : 'equipe');
+      sessionStorage.setItem('unitrans_email', usuario.email);
+      sessionStorage.setItem('unitrans_nome', usuario.nome);
+      if (usuario.clienteId != null) localStorage.setItem('unitrans_cliente_id', usuario.clienteId);
+      if (usuario.motoristaId != null) localStorage.setItem('unitrans_motorista_id', usuario.motoristaId);
+      if (usuario.analistaId != null) localStorage.setItem('unitrans_analista_id', usuario.analistaId);
+    } catch (err) { /* ignora se storage indisponível */ }
+  }
+
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     hideError();
@@ -453,36 +443,48 @@
       return;
     }
 
-    var match = ACCOUNTS.find(function (acc) {
-      return acc.email.toLowerCase() === email && acc.senha === senha;
-    });
-
-    // Também aceita clientes que se auto-cadastraram em cadastro.html.
-    if (!match) {
-      var cadastro = getCadastrosSalvos().find(function (c) {
-        return c.email.toLowerCase() === email && c.senha === senha;
-      });
-      if (cadastro) {
-        match = { role: 'cliente', email: cadastro.email, redirect: 'cliente/index.html' };
-      }
-    }
-
-    if (!match) {
-      showError('E-mail ou senha incorretos. Confira os dados e tente novamente.');
-      return;
-    }
-
+    submitBtn.disabled = true;
     submitBtn.classList.add('loading');
     submitBtn.textContent = 'Entrando…';
 
-    try {
-      sessionStorage.setItem('unitrans_role', match.role);
-      sessionStorage.setItem('unitrans_email', match.email);
-    } catch (err) { /* ignora se storage indisponível */ }
+    fetch(API_BASE + '/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, senha: senha })
+    })
+      .then(function (res) {
+        return res.json().then(function (corpo) {
+          if (!res.ok) throw new Error(corpo.erro || 'Não foi possível entrar.');
+          return corpo;
+        });
+      })
+      .then(function (usuario) {
+        salvarSessao(usuario);
+        window.location.href = usuario.redirect;
+      })
+      .catch(function (err) {
+        // Também aceita clientes que se auto-cadastraram em cadastro.html
+        // (ainda não gravam no banco — ver comentário acima).
+        var cadastro = getCadastrosSalvos().find(function (c) {
+          return c.email.toLowerCase() === email && c.senha === senha;
+        });
+        if (cadastro) {
+          try {
+            sessionStorage.setItem('unitrans_role', 'cliente');
+            sessionStorage.setItem('unitrans_email', cadastro.email);
+          } catch (e2) { /* ignora */ }
+          setTimeout(function () { window.location.href = 'cliente/index.html'; }, 450);
+          return;
+        }
 
-    setTimeout(function () {
-      window.location.href = match.redirect;
-    }, 450);
+        console.error(err);
+        showError(err.message === 'E-mail ou senha incorretos.'
+          ? err.message
+          : 'Não foi possível entrar agora. Tente novamente em instantes.');
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('loading');
+        submitBtn.innerHTML = 'Entrar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+      });
   });
 
 })();

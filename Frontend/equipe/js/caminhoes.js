@@ -1,43 +1,47 @@
 (function () {
   // ============================================================
-  // SERVIÇO DE DADOS DA FROTA (CAMINHÕES) - SIMULA UM BACKEND
-  // Mock local só para exemplificação. Quando o banco entrar,
-  // troca-se o corpo de cada função por um fetch().
+  // SERVIÇO DE DADOS DA FROTA (CAMINHÕES) — API real (Supabase)
   // ============================================================
   var FrotaService = (function () {
-    var caminhoes = [
-      { id: 'DVX-3A21', renavam: '01234567890', marca: 'Fiat', modelo: 'Fiorino', anoFabricacao: 2022, anoModelo: 2023, tipo: 'furgao', capacidade: 650, proprietario: 'Unitrans Logística', licenciamento: { situacao: 'regular', ano: 2026, ultimaVerificacao: '2026-01-15' }, ativo: true, observacoes: '', status: 'em_rota' },
-      { id: 'DVX-8F02', renavam: '01122334455', marca: 'Volkswagen', modelo: 'Delivery', anoFabricacao: 2021, anoModelo: 2021, tipo: 'vuc', capacidade: 2500, proprietario: 'Unitrans Logística', licenciamento: { situacao: 'regular', ano: 2026, ultimaVerificacao: '2026-02-02' }, ativo: true, observacoes: '', status: 'em_rota' },
-      { id: 'DVX-1C77', renavam: '02233445566', marca: 'Fiat', modelo: 'Fiorino', anoFabricacao: 2020, anoModelo: 2020, tipo: 'furgao', capacidade: 650, proprietario: 'Unitrans Logística', licenciamento: { situacao: 'pendente', ano: 2025, ultimaVerificacao: '2025-11-20' }, ativo: true, observacoes: '', status: 'disponivel' },
-      { id: 'DVX-4B90', renavam: '03344556677', marca: 'Volkswagen', modelo: 'Delivery', anoFabricacao: 2019, anoModelo: 2019, tipo: 'vuc', capacidade: 2500, proprietario: 'Terceirizado — José Silva', licenciamento: { situacao: 'nao_verificado', ano: 2026, ultimaVerificacao: null }, ativo: true, observacoes: 'Aguardando revisão do câmbio.', status: 'manutencao' },
-      { id: 'DVX-6D45', renavam: '04455667788', marca: 'Volkswagen', modelo: 'Delivery', anoFabricacao: 2023, anoModelo: 2024, tipo: 'vuc', capacidade: 2500, proprietario: 'Unitrans Logística', licenciamento: { situacao: 'regular', ano: 2026, ultimaVerificacao: '2026-03-10' }, ativo: true, observacoes: '', status: 'disponivel' }
-    ];
+    var API_BASE = 'http://localhost:3000/api';
+
+    function tratar(res) {
+      return res.json().then(function (corpo) {
+        if (!res.ok) throw new Error(corpo.erro || 'Erro ao comunicar com a API.');
+        return corpo;
+      });
+    }
 
     return {
       listarCaminhoes: function () {
-        return Promise.resolve(caminhoes.slice());
+        return fetch(API_BASE + '/caminhoes').then(tratar);
       },
       adicionarCaminhao: function (dados) {
-        var novo = Object.assign({}, dados, { id: (dados.id || '').toUpperCase().trim() });
-        caminhoes.push(novo);
-        return Promise.resolve(Object.assign({}, novo));
+        return fetch(API_BASE + '/caminhoes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dados)
+        }).then(tratar);
       },
       removerCaminhao: function (id) {
-        var index = caminhoes.findIndex(function (c) { return c.id === id; });
-        if (index === -1) return Promise.resolve(null);
-        var removido = caminhoes.splice(index, 1)[0];
-        return Promise.resolve(removido);
+        return fetch(API_BASE + '/caminhoes/' + encodeURIComponent(id), { method: 'DELETE' })
+          .then(function (res) {
+            if (!res.ok && res.status !== 204) throw new Error('Erro ao excluir caminhão.');
+            return true;
+          });
       },
       buscarCaminhao: function (id) {
-        var encontrado = caminhoes.find(function (c) { return c.id === id; });
-        return Promise.resolve(encontrado ? Object.assign({}, encontrado) : null);
+        return fetch(API_BASE + '/caminhoes/' + encodeURIComponent(id)).then(function (res) {
+          if (res.status === 404) return null;
+          return tratar(res);
+        });
       },
       atualizarCaminhao: function (id, dados) {
-        var index = caminhoes.findIndex(function (c) { return c.id === id; });
-        if (index === -1) return Promise.resolve(null);
-        var atualizado = Object.assign({}, dados, { id: (dados.id || id).toUpperCase().trim() });
-        caminhoes[index] = atualizado;
-        return Promise.resolve(Object.assign({}, atualizado));
+        return fetch(API_BASE + '/caminhoes/' + encodeURIComponent(id), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dados)
+        }).then(tratar);
       }
     };
   })();
@@ -221,6 +225,7 @@
   }
 
   function carregar() {
+    tabela.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--ink-faint);">Carregando...</td></tr>';
     FrotaService.listarCaminhoes().then(function (lista) {
       if (!lista.length) {
         tabela.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--ink-faint);">Nenhum caminhão cadastrado.</td></tr>';
@@ -261,6 +266,9 @@
           });
         });
       });
+    }).catch(function (err) {
+      console.error(err);
+      tabela.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--signal-red);">Não foi possível carregar os caminhões.</td></tr>';
     });
   }
 
@@ -398,7 +406,7 @@
       },
       ativo: radioAtivo.checked,
       observacoes: document.getElementById('obsCaminhao').value.trim(),
-      status: radioAtivo.checked ? 'disponivel' : 'manutencao'
+      status: radioAtivo.checked ? 'disponivel' : 'inativo'
     };
 
     var promessa = editandoId
@@ -408,10 +416,17 @@
       ? 'Caminhão ' + dadosCaminhao.id + ' atualizado com sucesso!'
       : 'Caminhão ' + dadosCaminhao.id + ' cadastrado com sucesso!';
 
+    if (btnEnviarCaminhao) btnEnviarCaminhao.disabled = true;
+
     promessa.then(function () {
       fecharModal();
       carregar();
       if (window.UI && UI.toast) UI.toast(mensagemSucesso);
+    }).catch(function (err) {
+      console.error(err);
+      if (window.UI && UI.toast) UI.toast(err.message || 'Não foi possível salvar o caminhão.');
+    }).finally(function () {
+      if (btnEnviarCaminhao) btnEnviarCaminhao.disabled = false;
     });
   });
 

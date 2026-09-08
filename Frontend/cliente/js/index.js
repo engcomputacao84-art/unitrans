@@ -1,4 +1,13 @@
 (function() {
+    // ---------- API real (Supabase) ----------
+    // TODO: ainda não existe login/sessão no backend. Enquanto isso não
+    // for implementado, o id do cliente logado fica salvo em localStorage
+    // (é o "usuario_id" dele nas tabelas usuarios/clientes) — mesmo
+    // mecanismo usado no restante do painel do cliente e no app do motorista.
+    var API_BASE = 'http://localhost:3000/api';
+    var clienteId = localStorage.getItem('unitrans_cliente_id') ||
+      new URLSearchParams(location.search).get('clienteId');
+
     // ---------- ABRIR/FECHAR MODAL ----------
     const overlay = document.getElementById('modalOverlay');
     const openBtn = document.getElementById('openModalBtn');
@@ -197,17 +206,68 @@
         e.preventDefault();
         if (!validateStep(4)) return;
         if (!validateStep(1) || !validateStep(2) || !validateStep(3)) return;
-        const protocolo = 'SL-' + Math.floor(2000 + Math.random() * 500);
-        $('protocolNum').textContent = protocolo;
-        $('summaryList').innerHTML =
-          row('Solicitante', val('nome')) +
-          row('Coleta', val('enderecoColeta') + ', ' + val('numeroColeta')) +
-          row('Entrega', val('enderecoEntrega') + ', ' + val('numeroEntrega')) +
-          row('Data de coleta', fmtData(val('dataColeta')));
-        $('wizardCard').classList.add('hidden');
-        $('confirmView').classList.add('active');
-        const modal = document.querySelector('.modal');
-        if (modal) modal.scrollTop = 0;
+
+        if (!clienteId) {
+          UI.toast('Não foi possível identificar seu cadastro. Faça login novamente.', 'error');
+          return;
+        }
+
+        var dados = {
+          clienteId: clienteId,
+          coleta: {
+            cep: val('cepColeta'), logradouro: val('enderecoColeta'), numero: val('numeroColeta'),
+            cidade: val('cidadeColeta'), estado: val('ufColeta')
+          },
+          entrega: {
+            cep: val('cepEntrega'), logradouro: val('enderecoEntrega'), numero: val('numeroEntrega'),
+            cidade: val('cidadeEntrega'), estado: val('ufEntrega')
+          },
+          // O schema tem uma única data desejada (coleta e entrega no
+          // mesmo dia, cada uma com seu período) — usamos a data de coleta.
+          dataDesejo: val('dataColeta'),
+          periodoColeta: val('periodoColeta'),
+          periodoEntrega: val('periodoEntrega'),
+          tipoCarga: (function () { var el = $('tipoCarga'); return el ? el.options[el.selectedIndex].text : ''; })(),
+          peso: val('peso') ? Number(val('peso')) : null,
+          volume: val('volume') ? Number(val('volume')) : null,
+          valorDeclarado: val('valorDeclarado') ? Number(val('valorDeclarado')) : null,
+          observacoes: val('observacoes') || null
+        };
+
+        var btnEnviar = $('btnEnviar');
+        if (btnEnviar) { btnEnviar.disabled = true; btnEnviar.textContent = 'Enviando...'; }
+
+        fetch(API_BASE + '/solicitacoes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dados)
+        })
+          .then(function (res) {
+            return res.json().then(function (corpo) {
+              if (!res.ok) throw new Error(corpo.erro || 'Não foi possível registrar a solicitação.');
+              return corpo;
+            });
+          })
+          .then(function (solicitacao) {
+            var protocolo = 'SL-' + String(solicitacao.id).padStart(4, '0');
+            $('protocolNum').textContent = protocolo;
+            $('summaryList').innerHTML =
+              row('Solicitante', val('nome')) +
+              row('Coleta', val('enderecoColeta') + ', ' + val('numeroColeta')) +
+              row('Entrega', val('enderecoEntrega') + ', ' + val('numeroEntrega')) +
+              row('Data de coleta', fmtData(val('dataColeta')));
+            $('wizardCard').classList.add('hidden');
+            $('confirmView').classList.add('active');
+            const modal = document.querySelector('.modal');
+            if (modal) modal.scrollTop = 0;
+          })
+          .catch(function (err) {
+            console.error(err);
+            UI.toast(err.message || 'Não foi possível registrar a solicitação.', 'error');
+          })
+          .finally(function () {
+            if (btnEnviar) { btnEnviar.disabled = false; btnEnviar.innerHTML = 'Enviar solicitação'; }
+          });
       });
     }
 

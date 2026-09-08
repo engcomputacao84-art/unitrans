@@ -10,17 +10,15 @@
   if (!tableBody || !stopListEl) return;
 
   // =================================================================
-  // CAMADA DE DADOS — RotasService (mock local, escopo do motorista logado)
-  // Quando o backend entrar, troca-se o corpo de cada função por um
-  // fetch() filtrado pelo motorista autenticado.
+  // CAMADA DE DADOS — RotasService — API real (Supabase)
+  // Cada "rota" na tela do motorista é uma carga (cargas) com suas
+  // paradas (paradas). Como ainda não existe login, o id do motorista
+  // logado é lido de localStorage — o mesmo mecanismo usado em carga.js.
   // =================================================================
   var RotasService = (function () {
-    var ROTAS = [
-      { id: 'RT-0512', veiculo: 'Fiorino · DVX-3A21', cargaId: 'C-0510', status: 'andamento', data: '2026-08-25' },
-      { id: 'RT-0515', veiculo: 'Fiorino · DVX-3A21', cargaId: 'C-0511', status: 'andamento', data: '2026-08-25' },
-      { id: 'RT-0509', veiculo: 'Fiorino · DVX-3A21', cargaId: 'C-0507', status: 'concluida', data: '2026-08-24' },
-      { id: 'RT-0521', veiculo: 'Fiorino · DVX-3A21', cargaId: 'C-0518', status: 'pendente', data: '2026-08-26' }
-    ];
+    var API_BASE = 'http://localhost:3000/api';
+    var motoristaId = localStorage.getItem('unitrans_motorista_id') ||
+      new URLSearchParams(location.search).get('motoristaId');
 
     var STATUS_LABEL = {
       andamento: { cls: 'b-andamento', label: 'Em andamento' },
@@ -28,40 +26,10 @@
       pendente: { cls: 'b-pendente', label: 'Não iniciada' }
     };
 
-    var PARADAS = {
-      'RT-0512': [
-        { id: 'p1', endereco: 'Av. Prestes Maia, 1840', cliente: 'Metalúrgica Rio Preto', tipo: 'Coleta', hora: '08:10', done: true },
-        { id: 'p2', endereco: 'Rua Amazonas, 522', cliente: 'Farmácia Bem-Estar', tipo: 'Entrega', hora: '08:35', done: true },
-        { id: 'p3', endereco: 'Av. Onze de Agosto, 2140', cliente: 'Clínica VidaPlus', tipo: 'Entrega', hora: '09:05', done: true },
-        { id: 'p4', endereco: 'Rua Bahia, 355', cliente: 'Confecções Del Rio', tipo: 'Coleta', hora: '09:40', done: false },
-        { id: 'p5', endereco: 'Av. Tancredo Neves, 980', cliente: 'Auto Peças Votupeças', tipo: 'Coleta', hora: '10:15', done: false },
-        { id: 'p6', endereco: 'Rua Ceará, 88', cliente: 'Loja Casa & Cia', tipo: 'Entrega', hora: '10:50', done: false },
-        { id: 'p7', endereco: 'Rod. Euclides da Cunha, km 431', cliente: 'Distribuidora Noroeste', tipo: 'Coleta', hora: '11:30', done: false },
-        { id: 'p8', endereco: 'Rua Bahia, 300', cliente: 'Supermercado Compre Bem', tipo: 'Entrega', hora: '12:05', done: false }
-      ],
-      'RT-0515': [
-        { id: 'p1', endereco: 'Av. Juscelino Kubitschek, 220', cliente: 'Restaurante Sabor Caseiro', tipo: 'Coleta', hora: '08:05', done: true },
-        { id: 'p2', endereco: 'Rua Marechal Deodoro, 640', cliente: 'Loja Utilidades Lar', tipo: 'Entrega', hora: '08:35', done: true },
-        { id: 'p3', endereco: 'Av. Philadelpho Gouvêa Netto, 1900', cliente: 'Pet Shop Amigo Fiel', tipo: 'Entrega', hora: '09:10', done: false },
-        { id: 'p4', endereco: 'Rua São Paulo, 310', cliente: 'Ótica Novo Olhar', tipo: 'Coleta', hora: '09:45', done: false },
-        { id: 'p5', endereco: 'Av. Danilo Galeazzi, 1500', cliente: 'Mercearia Boa Vista', tipo: 'Entrega', hora: '10:15', done: false }
-      ],
-      'RT-0509': [
-        { id: 'p1', endereco: 'Av. Alberto Andaló, 2900', cliente: 'Loja Modas Elegance', tipo: 'Coleta', hora: '08:00', done: true },
-        { id: 'p2', endereco: 'Rua Bahia, 522', cliente: 'Distribuidora Center Norte', tipo: 'Coleta', hora: '08:35', done: true },
-        { id: 'p3', endereco: 'Rua Amazonas, 970', cliente: 'Farmácia Vida', tipo: 'Entrega', hora: '09:05', done: true },
-        { id: 'p4', endereco: 'Av. Philadelpho Gouvêa Netto, 700', cliente: 'Auto Peças Rio Preto', tipo: 'Coleta', hora: '09:40', done: true }
-      ],
-      'RT-0521': [
-        { id: 'p1', endereco: 'Rua Pernambuco, 77', cliente: 'Papelaria Escreva Bem', tipo: 'Coleta', hora: '08:00', done: false },
-        { id: 'p2', endereco: 'Rod. Washington Luís, km 5', cliente: 'Depósito Constrular', tipo: 'Entrega', hora: '08:40', done: false },
-        { id: 'p3', endereco: 'Rua Amazonas, 700', cliente: 'Loja Moda Jovem', tipo: 'Coleta', hora: '09:10', done: false }
-      ]
-    };
-
-    function delay(value, ms) {
-      return new Promise(function (resolve) {
-        setTimeout(function () { resolve(value); }, ms || 150);
+    function tratar(res) {
+      return res.json().then(function (corpo) {
+        if (!res.ok) throw new Error(corpo.erro || 'Erro ao comunicar com a API.');
+        return corpo;
       });
     }
 
@@ -72,46 +40,56 @@
       return dataStr;
     }
 
-    function recalcularStatus(rotaId) {
-      var rota = ROTAS.find(function (r) { return r.id === rotaId; });
-      var paradas = PARADAS[rotaId] || [];
-      if (!rota || !paradas.length) return;
-      var concluidas = paradas.filter(function (p) { return p.done; }).length;
-      if (concluidas === 0) rota.status = rota.status === 'concluida' ? 'concluida' : 'pendente';
-      else if (concluidas === paradas.length) rota.status = 'concluida';
-      else rota.status = 'andamento';
-    }
-
     return {
       listar: function () {
-        return delay(ROTAS.map(function (r) {
-          return {
-            id: r.id,
-            veiculo: r.veiculo,
-            cargaId: r.cargaId,
-            status: r.status,
-            statusInfo: STATUS_LABEL[r.status],
-            data: r.data,
-            dataFormatada: formatarData(r.data),
-            paradas: (PARADAS[r.id] || []).length,
-            concluidas: (PARADAS[r.id] || []).filter(function (p) { return p.done; }).length
-          };
-        }));
+        if (!motoristaId) {
+          return Promise.reject(new Error('Motorista não identificado (login ainda não implementado).'));
+        }
+        return fetch(API_BASE + '/cargas?motoristaId=' + encodeURIComponent(motoristaId))
+          .then(tratar)
+          .then(function (cargas) {
+            return Promise.all(cargas.map(function (c) {
+              return fetch(API_BASE + '/paradas?cargaId=' + c.id).then(tratar).then(function (paradas) {
+                return {
+                  id: c.id,
+                  veiculo: c.caminhaoLabel,
+                  cargaId: c.id,
+                  status: c.status,
+                  statusInfo: STATUS_LABEL[c.status] || { cls: 'b-pendente', label: c.status },
+                  data: c.data,
+                  dataFormatada: formatarData(c.data),
+                  paradas: paradas.length,
+                  concluidas: paradas.filter(function (p) { return p.status === 'concluida'; }).length
+                };
+              });
+            }));
+          });
       },
 
       listarParadas: function (rotaId) {
-        return delay(JSON.parse(JSON.stringify(PARADAS[rotaId] || [])));
+        return fetch(API_BASE + '/paradas?cargaId=' + rotaId).then(tratar).then(function (paradas) {
+          return paradas.map(function (p) {
+            return {
+              id: p.id,
+              endereco: p.endereco,
+              cliente: p.cliente,
+              tipo: p.tipo === 'coleta' ? 'Coleta' : 'Entrega',
+              hora: p.horaPrevista,
+              done: p.status === 'concluida'
+            };
+          });
+        });
       },
 
-      alternarParada: function (rotaId, paradaId) {
-        var paradas = PARADAS[rotaId] || [];
-        var parada = paradas.find(function (p) { return p.id === paradaId; });
-        if (parada) parada.done = !parada.done;
-        recalcularStatus(rotaId);
-        return delay({ ok: true }, 120);
+      // Só é possível marcar como concluída (a API não tem "desfazer
+      // entrega" — clicar numa parada já concluída não faz nada).
+      alternarParada: function (rotaId, paradaId, jaConcluida) {
+        if (jaConcluida) return Promise.resolve({ ok: true });
+        return fetch(API_BASE + '/paradas/' + paradaId + '/concluir', { method: 'PATCH' }).then(tratar);
       }
     };
   })();
+
 
   var currentFilter = 'all';
   var rotasCache = [];
@@ -155,6 +133,9 @@
           abrirRota(btn.dataset.verRota);
         });
       });
+    }).catch(function (err) {
+      console.error(err);
+      tableBody.innerHTML = '<tr><td colspan="7" class="mono">Não foi possível carregar as rotas.</td></tr>';
     });
   }
 
@@ -193,7 +174,8 @@
       stopListEl.querySelectorAll('[data-stop]').forEach(function (el) {
         el.addEventListener('click', function () {
           var paradaId = el.dataset.stop;
-          RotasService.alternarParada(rotaAtualId, paradaId).then(function () {
+          var paradaAtual = paradas.find(function (p) { return String(p.id) === String(paradaId); });
+          RotasService.alternarParada(rotaAtualId, paradaId, paradaAtual && paradaAtual.done).then(function () {
             renderParadas();
           });
         });

@@ -1,226 +1,54 @@
 (function () {
   // ============================================================
-  // SERVIÇO DE DADOS DA FROTA - SIMULA UM BACKEND
+  // SERVIÇO DE DADOS DE MOTORISTAS — API real (Supabase)
   // ============================================================
-  var FrotaService = (function() {
-    // Dados iniciais com motoristas exemplo
-    var motoristas = [
-      // 1. MOTORISTA REGULAR - Documentação em dia
-      {
-        id: 1,
-        nome: "Carlos Menezes da Silva",
-        cpf: "123.456.789-00",
-        telefone: "(17) 99711-2245",
-        endereco: "Rua das Acácias, 123, Jardim América, São José do Rio Preto/SP",
-        cnhNumero: "12345678901",
-        cnhCategorias: ["B"],
-        cnhValidade: "2028-12-31",
-        status: "disponivel",
-        observacoes: "Motorista experiente com 10 anos de estrada. Disponível para rotas urbanas.",
-        dtValidadeCNH: "31/12/2028"
-      },
-      
-      // 2. MOTORISTA PENDENTE - Aguardando documentação
-      {
-        id: 2,
-        nome: "Josiane Ferreira Santos",
-        cpf: "987.654.321-00",
-        telefone: "(17) 99622-8871",
-        endereco: "Av. Brasil, 456, Centro, São José do Rio Preto/SP",
-        cnhNumero: "98765432109",
-        cnhCategorias: ["D"],
-        cnhValidade: "2026-06-15",
-        status: "pendente",
-        observacoes: "Motorista em processo de análise documental. Documentação enviada em 15/01/2026.",
-        dtValidadeCNH: "15/06/2026"
-      },
-      
-      // 3. MOTORISTA NÃO REGULAR - Documentação pendente
-      {
-        id: 3,
-        nome: "Paulo Ricardo Oliveira",
-        cpf: "456.789.123-00",
-        telefone: "(17) 99544-3390",
-        endereco: "Rua dos Pinheiros, 789, Vila Imperial, São José do Rio Preto/SP",
-        cnhNumero: "45678912301",
-        cnhCategorias: ["B", "C"],
-        cnhValidade: "2025-08-20",
-        status: "inativo",
-        observacoes: "Motorista com documentação pendente. Aguardando regularização.",
-        dtValidadeCNH: "20/08/2025"
-      },
-      
-      // 4. MOTORISTA REGULAR - Com todas as categorias
-      {
-        id: 4,
-        nome: "Roberto Carlos Almeida",
-        cpf: "789.123.456-00",
-        telefone: "(17) 99887-3344",
-        endereco: "Av. Paulista, 1000, Bela Vista, São José do Rio Preto/SP",
-        cnhNumero: "78912345601",
-        cnhCategorias: ["A", "C"],
-        cnhValidade: "2027-11-10",
-        status: "viajando",
-        observacoes: "Motorista experiente com todas as categorias. Disponível para qualquer tipo de veículo.",
-        dtValidadeCNH: "10/11/2027"
-      },
-      
-      // 5. MOTORISTA PENDENTE - CNH vencendo em breve
-      {
-        id: 5,
-        nome: "Mariana Cristina Lima",
-        cpf: "321.654.987-00",
-        telefone: "(17) 99123-4567",
-        endereco: "Rua das Margaridas, 456, Jardim das Flores, São José do Rio Preto/SP",
-        cnhNumero: "32165498701",
-        cnhCategorias: ["B", "D"],
-        cnhValidade: "2026-09-05",
-        status: "pendente",
-        observacoes: "CNH com validade próxima. Aguardando renovação.",
-        dtValidadeCNH: "05/09/2026"
-      },
-      
-      // 6. MOTORISTA NÃO REGULAR - Bloqueado
-      {
-        id: 6,
-        nome: "Antonio José Souza",
-        cpf: "159.753.486-00",
-        telefone: "(17) 99788-1122",
-        endereco: "Rua das Palmeiras, 789, Jardim Tropical, São José do Rio Preto/SP",
-        cnhNumero: "15975348601",
-        cnhCategorias: ["C", "E"],
-        cnhValidade: "2024-12-01",
-        status: "inativo",
-        observacoes: "Motorista bloqueado por irregularidades na documentação.",
-        dtValidadeCNH: "01/12/2024"
-      },
-      
-      // 7. MOTORISTA REGULAR - Em viagem
-      {
-        id: 7,
-        nome: "Fernanda Aparecida Costa",
-        cpf: "753.159.486-00",
-        telefone: "(17) 99977-6655",
-        endereco: "Av. dos Estados, 1000, Centro, São José do Rio Preto/SP",
-        cnhNumero: "75315948601",
-        cnhCategorias: ["B","D"],
-        cnhValidade: "2029-03-15",
-        status: "viajando",
-        observacoes: "Motorista em viagem para o interior do estado.",
-        dtValidadeCNH: "15/03/2029"
-      }
-    ];
+  var FrotaService = (function () {
+    var API_BASE = 'http://localhost:3000/api';
 
-    var nextId = 8;
-    var clientes = [];
-    var caminhoes = [];
-    var rotas = [];
-
-    // Helper para buscar motorista por ID
-    function buscarMotorista(id) {
-      return motoristas.find(function(m) { return m.id === id; });
+    function tratar(res) {
+      return res.json().then(function (corpo) {
+        if (!res.ok) throw new Error(corpo.erro || 'Erro ao comunicar com a API.');
+        return corpo;
+      });
     }
 
-    // API Pública
     return {
-      // Motoristas
-      listarMotoristas: function() {
-        return Promise.resolve(motoristas.slice());
+      listarMotoristas: function () {
+        return fetch(API_BASE + '/motoristas').then(tratar);
       },
 
-      buscarMotorista: function(id) {
-        var m = buscarMotorista(id);
-        return Promise.resolve(m ? Object.assign({}, m) : null);
-      },
-
-      adicionarMotorista: function(dados) {
-        var novo = Object.assign({}, dados, {
-          id: nextId++
+      buscarMotorista: function (id) {
+        return fetch(API_BASE + '/motoristas/' + id).then(function (res) {
+          if (res.status === 404) return null;
+          return tratar(res);
         });
-        motoristas.push(novo);
-        return Promise.resolve(Object.assign({}, novo));
       },
 
-      atualizarMotorista: function(dados) {
-        var index = motoristas.findIndex(function(m) { return m.id === dados.id; });
-        if (index === -1) {
-          return Promise.reject(new Error('Motorista não encontrado'));
-        }
-        motoristas[index] = Object.assign({}, motoristas[index], dados);
-        return Promise.resolve(Object.assign({}, motoristas[index]));
+      adicionarMotorista: function (dados) {
+        return fetch(API_BASE + '/motoristas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dados)
+        }).then(tratar);
       },
 
-      removerMotorista: function(id) {
-        var index = motoristas.findIndex(function(m) { return m.id === id; });
-        if (index === -1) {
-          return Promise.reject(new Error('Motorista não encontrado'));
-        }
-        motoristas.splice(index, 1);
-        return Promise.resolve();
+      atualizarMotorista: function (dados) {
+        return fetch(API_BASE + '/motoristas/' + dados.id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dados)
+        }).then(tratar);
       },
 
-      // Clientes
-      listarClientes: function() {
-        return Promise.resolve(clientes.slice());
-      },
-
-      adicionarCliente: function(dados) {
-        var novo = Object.assign({}, dados, {
-          id: Date.now()
+      removerMotorista: function (id) {
+        return fetch(API_BASE + '/motoristas/' + id, { method: 'DELETE' }).then(function (res) {
+          if (!res.ok && res.status !== 204) throw new Error('Erro ao excluir motorista.');
         });
-        clientes.push(novo);
-        return Promise.resolve(Object.assign({}, novo));
       },
 
-      removerCliente: function(id) {
-        var index = clientes.findIndex(function(c) { return c.id === id; });
-        if (index === -1) return Promise.reject(new Error('Cliente não encontrado'));
-        clientes.splice(index, 1);
-        return Promise.resolve();
-      },
-
-      // Caminhões
-      listarCaminhoes: function() {
-        return Promise.resolve(caminhoes.slice());
-      },
-
-      adicionarCaminhao: function(dados) {
-        var novo = Object.assign({}, dados, {
-          id: Date.now()
-        });
-        caminhoes.push(novo);
-        return Promise.resolve(Object.assign({}, novo));
-      },
-
-      removerCaminhao: function(id) {
-        var index = caminhoes.findIndex(function(c) { return c.id === id; });
-        if (index === -1) return Promise.reject(new Error('Caminhão não encontrado'));
-        caminhoes.splice(index, 1);
-        return Promise.resolve();
-      },
-
-      // Rotas
-      listarRotas: function() {
-        return Promise.resolve(rotas.slice());
-      },
-
-      adicionarRota: function(dados) {
-        var novo = Object.assign({}, dados, {
-          id: Date.now()
-        });
-        rotas.push(novo);
-        return Promise.resolve(Object.assign({}, novo));
-      },
-
-      removerRota: function(id) {
-        var index = rotas.findIndex(function(r) { return r.id === id; });
-        if (index === -1) return Promise.reject(new Error('Rota não encontrada'));
-        rotas.splice(index, 1);
-        return Promise.resolve();
-      },
-
-      // Utilitários de Status
-      statusBadgeClass: function(status) {
+      // Utilitários de Status (o rótulo "viajando" já vem pronto da API,
+      // que traduz o "em_rota" do banco)
+      statusBadgeClass: function (status) {
         var map = {
           'disponivel': 'success',
           'viajando': 'info',
@@ -231,7 +59,7 @@
         return map[status] || 'default';
       },
 
-      statusLabel: function(status) {
+      statusLabel: function (status) {
         var map = {
           'disponivel': 'Disponível',
           'viajando': 'Em rota',
@@ -301,6 +129,7 @@
   // CARREGA LISTA DE MOTORISTAS
   // ============================================================
   function carregar() {
+    tabela.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--ink-faint);padding:32px 0;">Carregando...</td></tr>';
     FrotaService.listarMotoristas().then(function (lista) {
       if (!lista || !lista.length) {
         tabela.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--ink-faint);padding:32px 0;">Nenhum motorista cadastrado.</td></tr>';
@@ -325,6 +154,9 @@
           removerMotorista(id);
         });
       });
+    }).catch(function (err) {
+      console.error(err);
+      tabela.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--signal-red);padding:32px 0;">Não foi possível carregar os motoristas.</td></tr>';
     });
   }
 

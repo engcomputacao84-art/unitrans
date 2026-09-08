@@ -6,84 +6,58 @@
   if (!historicoBody || !toolbarSemana) return;
 
   // =================================================================
-  // CAMADA DE DADOS — CargaService (mock local, escopo do motorista logado)
-  // Quando o backend entrar, troca-se "cargasSemana()" por um fetch()
-  // filtrado pelo motorista autenticado, trazendo as cargas da semana.
+  // CAMADA DE DADOS — CargaService — API real (Supabase)
   // =================================================================
   var CargaService = (function () {
+    var API_BASE = 'http://localhost:3000/api';
 
-    // 2 a 3 cargas de exemplo por dia da semana. "hoje: true" marca a
-    // carga em andamento no dia atual, que já vem selecionada no filtro.
-    var CARGAS_SEMANA = [
-      // ---- Segunda, 24/08 ----
-      { id: 'C-0501', diaKey: 'seg', data: '24/08', caminhao: 'DVX-3A21', status: 'concluida', hoje: false, itens: [
-        { tipo: 'coleta', cliente: 'Metalúrgica Rio Preto Ltda', endereco: 'Av. Prestes Maia, 1840', peso: 120 },
-        { tipo: 'entrega', cliente: 'Farmácia Bem-Estar', endereco: 'Rua Amazonas, 522', peso: 18 }
-      ] },
-      { id: 'C-0502', diaKey: 'seg', data: '24/08', caminhao: 'DVX-3A21', status: 'concluida', hoje: false, itens: [
-        { tipo: 'coleta', cliente: 'Confecções Del Rio', endereco: 'Rua Bahia, 355', peso: 60 },
-        { tipo: 'entrega', cliente: 'Loja Casa & Cia', endereco: 'Rua Ceará, 88', peso: 65 },
-        { tipo: 'entrega', cliente: 'Supermercado Compre Bem', endereco: 'Rua Bahia, 300', peso: 2 }
-      ] },
+    // TODO: ainda não existe login/sessão no backend. Enquanto isso não
+    // for implementado, o id do motorista logado fica salvo aqui (é o
+    // "usuario_id" dele na tabela usuarios/motoristas).
+    var motoristaId = localStorage.getItem('unitrans_motorista_id') ||
+      new URLSearchParams(location.search).get('motoristaId');
 
-      // ---- Terça, 25/08 (hoje) ----
-      { id: 'C-0505', diaKey: 'ter', data: '25/08', caminhao: 'DVX-3A21', status: 'concluida', hoje: false, itens: [
-        { tipo: 'coleta', cliente: 'Auto Peças Votupeças', endereco: 'Av. Tancredo Neves, 980', peso: 95 },
-        { tipo: 'entrega', cliente: 'Clínica VidaPlus', endereco: 'Av. Onze de Agosto, 2140', peso: 40 }
-      ] },
-      { id: 'C-0506', diaKey: 'ter', data: '25/08', caminhao: 'DVX-3A21', status: 'em_andamento', hoje: true, itens: [
-        { tipo: 'coleta', cliente: 'Metalúrgica Rio Preto Ltda', endereco: 'Av. Prestes Maia, 1840', peso: 120 },
-        { tipo: 'entrega', cliente: 'Farmácia Bem-Estar', endereco: 'Rua Amazonas, 522', peso: 18 },
-        { tipo: 'entrega', cliente: 'Clínica VidaPlus', endereco: 'Av. Onze de Agosto, 2140', peso: 40 }
-      ] },
-      { id: 'C-0507', diaKey: 'ter', data: '25/08', caminhao: 'DVX-3A21', status: 'agendada', hoje: false, itens: [
-        { tipo: 'coleta', cliente: 'Transportadora Bandeirantes', endereco: 'Rod. Euclides da Cunha, km 428', peso: 210 }
-      ] },
+    var DIAS_SEMANA_JS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+    var STATUS_CARGA_API_PARA_APP = { pendente: 'agendada', andamento: 'em_andamento', concluida: 'concluida' };
 
-      // ---- Quarta, 26/08 ----
-      { id: 'C-0510', diaKey: 'qua', data: '26/08', caminhao: 'DVX-3A21', status: 'agendada', hoje: false, itens: [
-        { tipo: 'coleta', cliente: 'Transportadora Bandeirantes', endereco: 'Rod. Euclides da Cunha, km 428', peso: 210 },
-        { tipo: 'entrega', cliente: 'Farmácia Bem-Estar', endereco: 'Rua Amazonas, 522', peso: 18 }
-      ] },
-      { id: 'C-0511', diaKey: 'qua', data: '26/08', caminhao: 'DVX-3A21', status: 'agendada', hoje: false, itens: [
-        { tipo: 'coleta', cliente: 'Auto Peças Votupeças', endereco: 'Av. Tancredo Neves, 980', peso: 95 },
-        { tipo: 'entrega', cliente: 'Loja Casa & Cia', endereco: 'Rua Ceará, 88', peso: 65 }
-      ] },
-
-      // ---- Quinta, 27/08 ----
-      { id: 'C-0514', diaKey: 'qui', data: '27/08', caminhao: 'DVX-3A21', status: 'agendada', hoje: false, itens: [
-        { tipo: 'coleta', cliente: 'Confecções Del Rio', endereco: 'Rua Bahia, 355', peso: 60 },
-        { tipo: 'entrega', cliente: 'Supermercado Compre Bem', endereco: 'Rua Bahia, 300', peso: 2 }
-      ] },
-      { id: 'C-0515', diaKey: 'qui', data: '27/08', caminhao: 'DVX-3A21', status: 'agendada', hoje: false, itens: [
-        { tipo: 'coleta', cliente: 'Metalúrgica Rio Preto Ltda', endereco: 'Av. Prestes Maia, 1840', peso: 120 }
-      ] },
-      { id: 'C-0516', diaKey: 'qui', data: '27/08', caminhao: 'DVX-3A21', status: 'cancelada', hoje: false, itens: [
-        { tipo: 'entrega', cliente: 'Clínica VidaPlus', endereco: 'Av. Onze de Agosto, 2140', peso: 40 }
-      ] },
-
-      // ---- Sexta, 28/08 ----
-      { id: 'C-0519', diaKey: 'sex', data: '28/08', caminhao: 'DVX-3A21', status: 'agendada', hoje: false, itens: [
-        { tipo: 'coleta', cliente: 'Auto Peças Votupeças', endereco: 'Av. Tancredo Neves, 980', peso: 95 },
-        { tipo: 'entrega', cliente: 'Loja Casa & Cia', endereco: 'Rua Ceará, 88', peso: 65 }
-      ] },
-      { id: 'C-0520', diaKey: 'sex', data: '28/08', caminhao: 'DVX-3A21', status: 'agendada', hoje: false, itens: [
-        { tipo: 'coleta', cliente: 'Transportadora Bandeirantes', endereco: 'Rod. Euclides da Cunha, km 428', peso: 210 },
-        { tipo: 'entrega', cliente: 'Farmácia Bem-Estar', endereco: 'Rua Amazonas, 522', peso: 18 }
-      ] }
-    ];
-
-    function delay(value, ms) {
-      return new Promise(function (resolve) {
-        setTimeout(function () { resolve(value); }, ms || 150);
+    function tratar(res) {
+      return res.json().then(function (corpo) {
+        if (!res.ok) throw new Error(corpo.erro || 'Erro ao comunicar com a API.');
+        return corpo;
       });
     }
 
+    function paradaParaItem(p) {
+      return { tipo: p.tipo, cliente: p.cliente, endereco: p.endereco, peso: p.pesoKg || 0 };
+    }
+
     return {
-      // Quando o backend entrar, isso vira um fetch() filtrado pelo
-      // motorista logado, trazendo as cargas da semana corrente.
+      // Traz as cargas do motorista logado (todas — o agrupamento por
+      // dia da semana é feito aqui mesmo, no cliente) já com os itens
+      // (paradas) de cada uma.
       cargasSemana: function () {
-        return delay(JSON.parse(JSON.stringify(CARGAS_SEMANA)));
+        if (!motoristaId) {
+          return Promise.reject(new Error('Motorista não identificado (login ainda não implementado).'));
+        }
+        var hojeISO = new Date().toISOString().slice(0, 10);
+
+        return fetch(API_BASE + '/cargas?motoristaId=' + encodeURIComponent(motoristaId))
+          .then(tratar)
+          .then(function (cargas) {
+            return Promise.all(cargas.map(function (c) {
+              return fetch(API_BASE + '/paradas?cargaId=' + c.id).then(tratar).then(function (paradas) {
+                return {
+                  id: 'C-' + String(c.id).padStart(4, '0'),
+                  diaKey: DIAS_SEMANA_JS[new Date(c.data + 'T00:00:00').getDay()],
+                  data: c.data.split('-').reverse().slice(0, 2).join('/'),
+                  caminhao: c.caminhaoId,
+                  status: STATUS_CARGA_API_PARA_APP[c.status] || c.status,
+                  hoje: c.data === hojeISO,
+                  itens: paradas.map(paradaParaItem)
+                };
+              });
+            }));
+          });
       }
     };
   })();

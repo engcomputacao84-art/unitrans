@@ -1,32 +1,66 @@
 (function () {
 
   // =================================================================
-  // CAMADA DE DADOS — AcompanhamentoService (mock local)
-  // Quando o backend entrar, troca-se "listar()" por um fetch() que
-  // devolva todas as solicitações do cliente logado (ex.: GET /minhas-solicitacoes).
+  // CAMADA DE DADOS — AcompanhamentoService — API real (Supabase)
+  // TODO: ainda não existe login/sessão no backend. Enquanto isso não
+  // for implementado, o id do cliente logado fica salvo em localStorage
+  // (é o "usuario_id" dele nas tabelas usuarios/clientes) — mesmo
+  // mecanismo usado no app do motorista.
   // =================================================================
   var AcompanhamentoService = (function () {
-    // Alguns exemplos cobrindo cada status possível — é só o que o
-    // histórico do cliente logado mostraria.
-    var SOLICITACOES = [
-      { id: 'SL-2201', cliente: 'Metalúrgica Rio Preto Ltda', documento: '12.345.678/0001-90', enderecoColeta: 'Av. Prestes Maia, 1840 — Centro', enderecoEntrega: 'Rua Amazonas, 522 — Vila Marin', dataColeta: '25/08/2026 · manhã', dataEntrega: '25/08/2026 · tarde', status: 'pendente', criadoEm: '22/08/2026 09:35', tipoCarga: 'Peças' },
-      { id: 'SL-2196', cliente: 'Metalúrgica Rio Preto Ltda', documento: '12.345.678/0001-90', enderecoColeta: 'Rua Bahia, 355 — Centro', enderecoEntrega: 'Av. Tancredo Neves, 980', dataColeta: '20/08/2026 · manhã', dataEntrega: '20/08/2026 · tarde', status: 'aprovado', criadoEm: '18/08/2026 10:12', tipoCarga: 'Materiais' },
-      { id: 'SL-2183', cliente: 'Metalúrgica Rio Preto Ltda', documento: '12.345.678/0001-90', enderecoColeta: 'Av. Onze de Agosto, 2140', enderecoEntrega: 'Rua Ceará, 88', dataColeta: '17/08/2026 · manhã', dataEntrega: '17/08/2026 · manhã', status: 'em_carga', criadoEm: '15/08/2026 08:40', tipoCarga: 'Peças' },
-      { id: 'SL-2170', cliente: 'Metalúrgica Rio Preto Ltda', documento: '12.345.678/0001-90', enderecoColeta: 'Rua Piauí, 210', enderecoEntrega: 'Av. Bady Bassitt, 1500', dataColeta: '12/08/2026 · tarde', dataEntrega: '12/08/2026 · tarde', status: 'em_rota', criadoEm: '10/08/2026 14:05', tipoCarga: 'Peças' },
-      { id: 'SL-2154', cliente: 'Metalúrgica Rio Preto Ltda', documento: '12.345.678/0001-90', enderecoColeta: 'Rua Amazonas, 700', enderecoEntrega: 'Rua Bahia, 300', dataColeta: '05/08/2026 · manhã', dataEntrega: '05/08/2026 · manhã', status: 'concluido', criadoEm: '03/08/2026 09:20', tipoCarga: 'Documentos' },
-      { id: 'SL-2140', cliente: 'Metalúrgica Rio Preto Ltda', documento: '12.345.678/0001-90', enderecoColeta: 'Rod. Euclides da Cunha, km 431', enderecoEntrega: 'Av. Sete de Setembro, 512', dataColeta: '29/07/2026 · tarde', dataEntrega: '29/07/2026 · tarde', status: 'recusado', criadoEm: '27/07/2026 11:00', tipoCarga: 'Materiais', motivoRecusa: 'O peso excede o limite de carga dos nossos caminhões disponíveis.' }
-    ];
+    var API_BASE = 'http://localhost:3000/api';
+    var clienteId = localStorage.getItem('unitrans_cliente_id') ||
+      new URLSearchParams(location.search).get('clienteId');
 
-    function delay(value, ms) {
-      return new Promise(function (resolve) {
-        setTimeout(function () { resolve(value); }, ms || 200);
+    var PERIODO_LABEL = { manha: 'manhã', tarde: 'tarde' };
+
+    function tratar(res) {
+      return res.json().then(function (corpo) {
+        if (!res.ok) throw new Error(corpo.erro || 'Erro ao comunicar com a API.');
+        return corpo;
       });
     }
 
+    function formatarDataHora(iso) {
+      if (!iso) return '—';
+      var d = new Date(iso);
+      return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function formatarDataPeriodo(dataISO, periodo) {
+      if (!dataISO) return '—';
+      var partes = dataISO.split('-');
+      var dataBr = partes.length === 3 ? partes[2] + '/' + partes[1] + '/' + partes[0] : dataISO;
+      return dataBr + (periodo ? ' · ' + (PERIODO_LABEL[periodo] || periodo) : '');
+    }
+
+    function paraTela(s) {
+      // O schema tem uma única "data desejada" (com período de coleta
+      // e de entrega dentro do mesmo dia) — não datas separadas.
+      return {
+        id: 'SL-' + String(s.id).padStart(4, '0'),
+        cliente: s.cliente,
+        documento: s.documento,
+        enderecoColeta: s.enderecoColeta,
+        enderecoEntrega: s.enderecoEntrega,
+        dataColeta: formatarDataPeriodo(s.dataDesejo, s.periodoColeta),
+        dataEntrega: formatarDataPeriodo(s.dataDesejo, s.periodoEntrega),
+        status: s.status,
+        criadoEm: formatarDataHora(s.criadoEm),
+        tipoCarga: s.tipoCarga,
+        motivoRecusa: s.motivoRecusa
+      };
+    }
+
     return {
-      // Lista o histórico inteiro do cliente logado (sem precisar buscar nada).
+      // Lista o histórico inteiro do cliente logado.
       listar: function () {
-        return delay(SOLICITACOES.slice());
+        if (!clienteId) {
+          return Promise.reject(new Error('Cliente não identificado (login ainda não implementado).'));
+        }
+        return fetch(API_BASE + '/solicitacoes?clienteId=' + encodeURIComponent(clienteId))
+          .then(tratar)
+          .then(function (lista) { return lista.map(paraTela); });
       }
     };
   })();
@@ -208,6 +242,10 @@
     TODAS = lista;
     renderPills();
     renderTabela();
+  }).catch(function (err) {
+    console.error(err);
+    wrapEl.innerHTML = '<div class="empty-state"><i class="fas fa-triangle-exclamation"></i><p>' +
+      (err.message || 'Não foi possível carregar suas solicitações.') + '</p></div>';
   });
 
 })();
