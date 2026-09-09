@@ -3,7 +3,7 @@
   // SERVIÇO DE DADOS DE MOTORISTAS — API real (Supabase)
   // ============================================================
   var FrotaService = (function () {
-    var API_BASE = 'http://localhost:3000/api';
+    var API_BASE = '/api';
 
     function tratar(res) {
       return res.json().then(function (corpo) {

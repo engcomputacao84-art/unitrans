@@ -63,7 +63,7 @@
   // numérico da carga formatado.
   // =================================================================
   var RotasService = (function () {
-    var API_BASE = 'http://localhost:3000/api';
+    var API_BASE = '/api';
 
     var STATUS_LABEL = {
       andamento: { cls: 'b-andamento', label: 'Em andamento' },

@@ -4,7 +4,7 @@
     // for implementado, o id do cliente logado fica salvo em localStorage
     // (é o "usuario_id" dele nas tabelas usuarios/clientes) — mesmo
     // mecanismo usado no restante do painel do cliente e no app do motorista.
-    var API_BASE = 'http://localhost:3000/api';
+    var API_BASE = '/api';
     var clienteId = localStorage.getItem('unitrans_cliente_id') ||
       new URLSearchParams(location.search).get('clienteId');
 

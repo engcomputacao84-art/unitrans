@@ -16,7 +16,7 @@
   // logado é lido de localStorage — o mesmo mecanismo usado em carga.js.
   // =================================================================
   var RotasService = (function () {
-    var API_BASE = 'http://localhost:3000/api';
+    var API_BASE = '/api';
     var motoristaId = localStorage.getItem('unitrans_motorista_id') ||
       new URLSearchParams(location.search).get('motoristaId');
 

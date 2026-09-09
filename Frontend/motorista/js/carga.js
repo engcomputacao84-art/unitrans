@@ -9,7 +9,7 @@
   // CAMADA DE DADOS — CargaService — API real (Supabase)
   // =================================================================
   var CargaService = (function () {
-    var API_BASE = 'http://localhost:3000/api';
+    var API_BASE = '/api';
 
     // TODO: ainda não existe login/sessão no backend. Enquanto isso não
     // for implementado, o id do motorista logado fica salvo aqui (é o

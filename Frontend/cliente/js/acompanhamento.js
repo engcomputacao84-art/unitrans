@@ -8,7 +8,7 @@
   // mecanismo usado no app do motorista.
   // =================================================================
   var AcompanhamentoService = (function () {
-    var API_BASE = 'http://localhost:3000/api';
+    var API_BASE = '/api';
     var clienteId = localStorage.getItem('unitrans_cliente_id') ||
       new URLSearchParams(location.search).get('clienteId');
 

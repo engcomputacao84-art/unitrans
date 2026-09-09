@@ -1,6 +1,6 @@
 (function () {
   // ---------- API real (Supabase) ----------
-  var API_BASE = 'http://localhost:3000/api';
+  var API_BASE = '/api';
   // TODO: sem login/sessão ainda — id do analista fica em localStorage.
   var analistaId = localStorage.getItem('unitrans_analista_id') || null;
 
