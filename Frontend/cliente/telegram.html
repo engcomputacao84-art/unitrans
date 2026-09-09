@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="../img/simple-logo.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unitrans · Telegram</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/telegram.css">
+</head>
+<body>
+
+<div class="app">
+  <div id="sidebar-mount"></div>
+  <script src="../shared/js/sidebar-engine.js"></script>
+  <script src="js/sidebar.js"></script>
+
+  <div class="main">
+    <div id="mobile-nav-mount"></div>
+
+    <div class="topbar">
+      <div>
+        <div class="page-title">Telegram</div>
+        <div class="page-sub">Vincule sua conta para receber avisos das suas solicitações</div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Vínculo com o Telegram</h3>
+          <span class="badge default" id="telegramBadge">Verificando…</span>
+        </div>
+        <div class="panel-body">
+
+          <p class="telegram-loading" id="telegramCarregando">Carregando...</p>
+
+          <div id="blocoNaoVinculado" style="display:none;">
+            <p class="telegram-steps">
+              Vincule sua conta ao bot da Unitrans no Telegram para receber um aviso
+              assim que sua carga for coletada ou entregue.
+            </p>
+
+            <div class="telegram-code-box" id="blocoCodigo">
+              <p class="telegram-steps" style="margin-bottom:10px;">
+                1. Abra o Telegram e procure pelo bot da Unitrans.<br>
+                2. Envie a mensagem abaixo para o bot:
+              </p>
+              <input type="text" id="inputCodigo" readonly>
+              <p class="telegram-code-hint">O código expira em 15 minutos, ou ao gerar um novo.</p>
+            </div>
+
+            <button type="button" class="btn btn-primary" id="btnGerarCodigo">Gerar código de vinculação</button>
+          </div>
+
+          <div id="blocoVinculado" style="display:none;">
+            <div class="telegram-status-line" style="color:var(--green);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <span>Sua conta está vinculada ao Telegram.</span>
+            </div>
+            <button type="button" class="btn btn-danger" id="btnDesvincular">Desvincular Telegram</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="telegram-toast" id="telegramToast"></div>
+
+<script src="js/telegram.js"></script>
+</body>
+</html>
