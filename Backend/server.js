@@ -1,5 +1,3 @@
-
-
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -12,11 +10,16 @@ const solicitacoesRotas = require('./Rotas/solicitacoes');
 const paradasRotas = require('./Rotas/paradas');
 const notificacoesRotas = require('./Rotas/notificacoes');
 const authRotas = require('./Rotas/auth');
+const telegramRotas = require('./Rotas/telegram');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+app.get('/', function (req, res) {
+  res.json({ ok: true, servico: 'unitrans-api', docs: '/api/health' });
+});
 
 app.get('/api/health', function (req, res) {
   res.json({ ok: true, servico: 'unitrans-api' });
@@ -30,6 +33,7 @@ app.use('/api/cargas', cargasRotas);
 app.use('/api/solicitacoes', solicitacoesRotas);
 app.use('/api/paradas', paradasRotas);
 app.use('/api/notificacoes', notificacoesRotas);
+app.use('/api/telegram', telegramRotas);
 
 app.use(function (req, res) {
   res.status(404).json({ erro: 'Rota não encontrada.' });

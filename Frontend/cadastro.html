@@ -563,7 +563,7 @@
           </form>
 
           <div class="login-link-row">
-            Já tem conta? <a href="login.html">Entrar</a>
+            Já tem conta? <a href="../index.html">Entrar</a>
           </div>
 
         </div>
@@ -887,7 +887,7 @@
     var cadastros = getCadastrosSalvos();
     var ultimo = cadastros[cadastros.length - 1];
     var email = ultimo ? ultimo.email : '';
-    window.location.href = 'login.html' + (email ? ('?email=' + encodeURIComponent(email)) : '');
+    window.location.href = '../index.html' + (email ? ('?email=' + encodeURIComponent(email)) : '');
   });
 
   goToStep(1);
