@@ -384,15 +384,6 @@
   var submitBtn = document.getElementById('submitBtn');
   var togglePass = document.getElementById('togglePass');
 
-  // Contas criadas pela tela de cadastro.html nesta sessão (protótipo sem
-  // backend real ainda — quando o cadastro passar a gravar no Supabase, isto
-  // deixa de ser necessário e o login passa a consultar só a API).
-  function getCadastrosSalvos() {
-    try {
-      return JSON.parse(sessionStorage.getItem('unitrans_novos_cadastros') || '[]');
-    } catch (e) { return []; }
-  }
-
   // Pré-preenche o e-mail quando o usuário chega aqui logo depois de criar a conta.
   (function preencherEmailDoCadastro() {
     var params = new URLSearchParams(window.location.search);
@@ -463,20 +454,6 @@
         window.location.href = usuario.redirect;
       })
       .catch(function (err) {
-        // Também aceita clientes que se auto-cadastraram em cadastro.html
-        // (ainda não gravam no banco — ver comentário acima).
-        var cadastro = getCadastrosSalvos().find(function (c) {
-          return c.email.toLowerCase() === email && c.senha === senha;
-        });
-        if (cadastro) {
-          try {
-            sessionStorage.setItem('unitrans_role', 'cliente');
-            sessionStorage.setItem('unitrans_email', cadastro.email);
-          } catch (e2) { /* ignora */ }
-          setTimeout(function () { window.location.href = 'cliente/index.html'; }, 450);
-          return;
-        }
-
         console.error(err);
         showError(err.message === 'E-mail ou senha incorretos.'
           ? err.message

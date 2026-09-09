@@ -91,11 +91,12 @@ async function criar(dados) {
     .single();
   if (erroEndereco) throw erroEndereco;
 
-  // 2) usuário (login ainda não existe pra cliente cadastrado pela
-  //    equipe — gera uma senha temporária; o cliente troca no
-  //    primeiro acesso via "esqueci minha senha")
-  const senhaTemporaria = Math.random().toString(36).slice(-10);
-  const senhaHash = bcrypt.hashSync(senhaTemporaria, 10);
+  // 2) usuário — se vier `senha` (autocadastro em cadastro.html), usa a
+  //    senha que a pessoa escolheu. Se não vier (cliente criado pela
+  //    equipe, sem login ainda), gera uma senha temporária; o cliente
+  //    troca no primeiro acesso via "esqueci minha senha".
+  const senhaOrigem = dados.senha || Math.random().toString(36).slice(-10);
+  const senhaHash = bcrypt.hashSync(senhaOrigem, 10);
   const nomeUsuario = dados.tipo === 'PJ' ? (dados.fantasia || dados.nome) : dados.nome;
 
   const { data: usuario, error: erroUsuario } = await supabaseService

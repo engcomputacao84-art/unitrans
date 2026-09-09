@@ -802,21 +802,7 @@
     });
   });
 
-  /* ---------- E-mails já usados (demo + cadastros anteriores nesta sessão) ---------- */
-  // Nota: sem backend real ainda, então a checagem de e-mail único é só uma
-  // simulação em sessionStorage, igual ao restante deste protótipo (login.html).
-  var EMAILS_DEMO = ['cliente@unitrans.com.br', 'motorista@unitrans.com.br', 'analista@unitrans.com.br'];
-
-  function getCadastrosSalvos() {
-    try {
-      return JSON.parse(sessionStorage.getItem('unitrans_novos_cadastros') || '[]');
-    } catch (e) { return []; }
-  }
-
-  function emailJaExiste(email) {
-    var emails = EMAILS_DEMO.concat(getCadastrosSalvos().map(function (c) { return c.email; }));
-    return emails.indexOf(email.toLowerCase()) !== -1;
-  }
+  var API_BASE = '/api';
 
   /* ---------- Envio do formulário ---------- */
   form.addEventListener('submit', function (e) {
@@ -838,12 +824,6 @@
     if (!todasValidas) return;
 
     var email = $('email').value.trim().toLowerCase();
-    if (emailJaExiste(email)) {
-      goToStep(3);
-      showError('Este e-mail já está cadastrado. Tente entrar ou use outro e-mail.');
-      marcarInvalido($('email'), true);
-      return;
-    }
 
     var tipo = getTipo();
     var isPF = tipo === 'PF';
@@ -870,23 +850,37 @@
     btnEnviar.disabled = true;
     btnEnviar.innerHTML = 'Criando conta...';
 
-    setTimeout(function () {
-      // TODO(backend): substituir por chamada real ao endpoint de cadastro
-      // (insere em `usuarios` tipo 'C' + `clientes`, com senha_hash gerado no servidor).
-      var cadastros = getCadastrosSalvos();
-      cadastros.push(dados);
-      try { sessionStorage.setItem('unitrans_novos_cadastros', JSON.stringify(cadastros)); } catch (err) {}
-
-      wizardView.style.display = 'none';
-      successView.classList.add('active');
-      $('successText').textContent = 'Sua conta (' + dados.email + ') foi criada. Agora você já pode entrar para solicitar coletas e entregas.';
-    }, 500);
+    fetch(API_BASE + '/clientes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dados)
+    })
+      .then(function (res) {
+        return res.json().then(function (corpo) {
+          if (!res.ok) throw new Error(corpo.erro || 'Não foi possível criar a conta.');
+          return corpo;
+        });
+      })
+      .then(function () {
+        wizardView.style.display = 'none';
+        successView.classList.add('active');
+        $('successText').textContent = 'Sua conta (' + dados.email + ') foi criada. Agora você já pode entrar para solicitar coletas e entregas.';
+      })
+      .catch(function (err) {
+        if (err.message && err.message.indexOf('e-mail ou documento') !== -1) {
+          goToStep(3);
+          showError('Este e-mail já está cadastrado. Tente entrar ou use outro e-mail.');
+          marcarInvalido($('email'), true);
+        } else {
+          showError(err.message || 'Não foi possível criar a conta agora. Tente novamente em instantes.');
+        }
+        btnEnviar.disabled = false;
+        btnEnviar.innerHTML = '<i class="fas fa-check"></i> Criar minha conta';
+      });
   });
 
   $('btnIrLogin').addEventListener('click', function () {
-    var cadastros = getCadastrosSalvos();
-    var ultimo = cadastros[cadastros.length - 1];
-    var email = ultimo ? ultimo.email : '';
+    var email = $('email').value.trim().toLowerCase();
     window.location.href = '../index.html' + (email ? ('?email=' + encodeURIComponent(email)) : '');
   });
 
