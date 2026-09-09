@@ -2,35 +2,26 @@
   var tabelaEl = document.getElementById('cargasTabela');
   if (!tabelaEl) return;
 
+  var API_BASE = 'http://localhost:3000/api';
+
+  function tratar(res) {
+    return res.json().then(function (corpo) {
+      if (!res.ok) throw new Error(corpo.erro || 'Erro ao comunicar com a API.');
+      return corpo;
+    });
+  }
+
   // ============================================================
-  // SERVIÇO DE DADOS DA FROTA (CAMINHÕES + MOTORISTAS) - MOCK
-  // Mock local só para exemplificação. Quando o banco entrar,
-  // troca-se o corpo de cada função por um fetch().
+  // FrotaService — API real (Supabase)
   // ============================================================
   var FrotaService = (function () {
-    var caminhoes = [
-      { id: 'DVX-3A21', modelo: 'Fiorino', capacidade: 650, status: 'em_rota' },
-      { id: 'DVX-8F02', modelo: 'Delivery', capacidade: 2500, status: 'em_rota' },
-      { id: 'DVX-1C77', modelo: 'Fiorino', capacidade: 650, status: 'disponivel' },
-      { id: 'DVX-4B90', modelo: 'Delivery', capacidade: 2500, status: 'manutencao' },
-      { id: 'DVX-6D45', modelo: 'Delivery', capacidade: 2500, status: 'disponivel' },
-      { id: 'DVX-7E19', modelo: 'Fiorino', capacidade: 650, status: 'disponivel' }
-    ];
-
-    var motoristas = [
-      { id: 'MOT-001', nome: 'Carlos Menezes', status: 'em_rota' },
-      { id: 'MOT-002', nome: 'Josiane Ferreira', status: 'em_rota' },
-      { id: 'MOT-003', nome: 'Paulo Ricardo', status: 'disponivel' },
-      { id: 'MOT-004', nome: 'Fernanda Oliveira', status: 'disponivel' },
-      { id: 'MOT-005', nome: 'Roberto Santos', status: 'folga' }
-    ];
-
     var STATUS_LABEL = {
       disponivel: 'Disponível',
       em_rota: 'Em rota',
       manutencao: 'Manutenção',
       folga: 'Folga',
-      inativo: 'Inativo'
+      inativo: 'Inativo',
+      viajando: 'Em rota'
     };
 
     return {
@@ -38,20 +29,57 @@
         return STATUS_LABEL[status] || status;
       },
       listarCaminhoes: function () {
-        return Promise.resolve(caminhoes.slice());
+        return fetch(API_BASE + '/caminhoes').then(tratar);
       },
       listarMotoristasDisponiveis: function () {
-        return Promise.resolve(motoristas.filter(function (m) { return m.status === 'disponivel'; }));
-      },
-      atualizarStatusCaminhao: function (id, status) {
-        var c = caminhoes.find(function (x) { return x.id === id; });
-        if (c) c.status = status;
-        return Promise.resolve(c || null);
-      },
-      atualizarStatusMotorista: function (id, status) {
-        var m = motoristas.find(function (x) { return x.id === id; });
-        if (m) m.status = status;
-        return Promise.resolve(m || null);
+        return fetch(API_BASE + '/motoristas').then(tratar).then(function (lista) {
+          return lista.filter(function (m) { return m.status === 'disponivel'; });
+        });
+      }
+    };
+  })();
+
+  // ============================================================
+  // SolicitacoesService — API real (Supabase)
+  // "dia" aqui é a data_desejo (YYYY-MM-DD) formatada como DD/MM.
+  // ============================================================
+  var SolicitacoesService = (function () {
+    function formatarDia(iso) {
+      if (!iso) return '—';
+      var p = iso.split('-');
+      return p.length === 3 ? p[2] + '/' + p[1] : iso;
+    }
+
+    // Extrai a cidade de um endereço já formatado pelo backend
+    // ("Rua X, 10 — Bairro (Cidade/UF)") só pra dar um resumo de
+    // região na listagem — não existe campo "zona" no banco.
+    function extrairCidade(enderecoFormatado) {
+      if (!enderecoFormatado) return null;
+      var m = enderecoFormatado.match(/\(([^/)]+)/);
+      return m ? m[1].trim() : null;
+    }
+
+    function paraItem(s) {
+      return {
+        id: s.id,
+        cliente: s.cliente,
+        enderecoColeta: s.enderecoColeta,
+        enderecoEntrega: s.enderecoEntrega,
+        cidade: extrairCidade(s.enderecoColeta) || extrairCidade(s.enderecoEntrega),
+        peso: Number(s.peso) || 0,
+        dataDesejo: s.dataDesejo,
+        dia: formatarDia(s.dataDesejo),
+        status: s.status
+      };
+    }
+
+    return {
+      // busca TODAS (não só 'aprovado'), pra também conseguir montar o
+      // resumo das cargas que já têm solicitações vinculadas ('em_carga').
+      listarTodas: function () {
+        return fetch(API_BASE + '/solicitacoes').then(tratar).then(function (lista) {
+          return lista.map(paraItem);
+        });
       }
     };
   })();
@@ -61,8 +89,6 @@
   var ROUTE_ICON = '<i class="fas fa-route"></i>';
   var VIEW_ICON = '<i class="fas fa-external-link-alt"></i>';
   var CHEVRON_ICON = '<i class="fas fa-chevron-right"></i>';
-
-  var DAYS = ['25/08', '26/08', '27/08'];
 
   // Referências dos filtros
   var filterChips = document.querySelectorAll('#filterToolbarCargas .chip');
@@ -77,201 +103,100 @@
   // Estado das linhas expandidas (dropdown) da listagem
   var openRows = {};
 
-  // Cache de capacidade dos caminhões (para a coluna Usado/Capacidade)
-  var caminhoesCache = {};
-  function carregarCaminhoesCache() {
-    return FrotaService.listarCaminhoes().then(function (lista) {
-      lista.forEach(function (c) { caminhoesCache[c.id] = c; });
-    });
-  }
-
-  // =================================================================
-  // Solicitações pendentes (mock)
-  // =================================================================
-  var MOCK_SOLICITACOES = [
-    // ---- 25/08 ----
-    { id: 'SL-2201', cliente: 'Metalúrgica Rio Preto Ltda', tipo: 'coleta', zona: 'Centro', endereco: 'Av. Prestes Maia, 1840', periodo: 'manha', peso: 120, dia: '25/08' },
-    { id: 'SL-2202', cliente: 'Farmácia Bem-Estar', tipo: 'entrega', zona: 'Vila Marin', endereco: 'Rua Amazonas, 522', periodo: 'tarde', peso: 18, dia: '25/08' },
-    { id: 'SL-2203', cliente: 'Distribuidora Noroeste', tipo: 'coleta', zona: 'Distrito Industrial', endereco: 'Rod. Euclides da Cunha, km 431', periodo: 'manha', peso: 480, dia: '25/08' },
-    { id: 'SL-2205', cliente: 'Auto Peças Votupeças', tipo: 'coleta', zona: 'Centro', endereco: 'Av. Tancredo Neves, 980', periodo: 'tarde', peso: 95, dia: '25/08' },
-    { id: 'SL-2207', cliente: 'Clínica VidaPlus', tipo: 'entrega', zona: 'Centro', endereco: 'Av. Onze de Agosto, 2140', periodo: 'manha', peso: 40, dia: '25/08' },
-    { id: 'SL-2209', cliente: 'Transportadora Bandeirantes', tipo: 'coleta', zona: 'Distrito Industrial', endereco: 'Rod. Euclides da Cunha, km 428', periodo: 'manha', peso: 210, dia: '25/08' },
-    { id: 'SL-2211', cliente: 'Loja Casa & Cia', tipo: 'entrega', zona: 'Vila Marin', endereco: 'Rua Ceará, 88', periodo: 'tarde', peso: 65, dia: '25/08' },
-    { id: 'SL-2215', cliente: 'Supermercado Compre Bem', tipo: 'entrega', zona: 'Centro', endereco: 'Rua Bahia, 300', periodo: 'manha', peso: 150, dia: '25/08' },
-
-    // ---- 26/08 ----
-    { id: 'SL-2204', cliente: 'Mercado São José', tipo: 'entrega', zona: 'Jd. Redentor', endereco: 'Rua Piratininga, 190', periodo: 'manha', peso: 88, dia: '26/08' },
-    { id: 'SL-2206', cliente: 'Confecções Del Rio', tipo: 'coleta', zona: 'Centro', endereco: 'Rua Bahia, 355', periodo: 'manha', peso: 60, dia: '26/08' },
-    { id: 'SL-2212', cliente: 'Distribuidora Sul', tipo: 'entrega', zona: 'Jd. Redentor', endereco: 'Av. Sete de Setembro, 512', periodo: 'tarde', peso: 140, dia: '26/08' },
-    { id: 'SL-2213', cliente: 'Padaria Trigo Dourado', tipo: 'coleta', zona: 'Vila Marin', endereco: 'Rua Piauí, 210', periodo: 'tarde', peso: 35, dia: '26/08' },
-    { id: 'SL-2216', cliente: 'Auto Center Norte', tipo: 'coleta', zona: 'Zona Sul', endereco: 'Av. Alberto Andaló, 3050', periodo: 'manha', peso: 320, dia: '26/08' },
-    { id: 'SL-2217', cliente: 'Farmácia Popular', tipo: 'entrega', zona: 'Zona Sul', endereco: 'Rua Voluntário Salles, 900', periodo: 'tarde', peso: 22, dia: '26/08' },
-
-    // ---- 27/08 ----
-    { id: 'SL-2208', cliente: 'Papelaria Escreva Bem', tipo: 'coleta', zona: 'Centro', endereco: 'Rua Pernambuco, 77', periodo: 'tarde', peso: 25, dia: '27/08' },
-    { id: 'SL-2214', cliente: 'Depósito Constrular', tipo: 'entrega', zona: 'Distrito Industrial', endereco: 'Rod. Washington Luís, km 5', periodo: 'manha', peso: 410, dia: '27/08' },
-    { id: 'SL-2218', cliente: 'Loja Moda Jovem', tipo: 'coleta', zona: 'Vila Marin', endereco: 'Rua Amazonas, 700', periodo: 'manha', peso: 48, dia: '27/08' },
-    { id: 'SL-2219', cliente: 'Distribuidora Rio Preto Alimentos', tipo: 'coleta', zona: 'Zona Sul', endereco: 'Av. Alberto Andaló, 4100', periodo: 'tarde', peso: 260, dia: '27/08' },
-    { id: 'SL-2220', cliente: 'Clínica Odontológica Sorriso', tipo: 'entrega', zona: 'Centro', endereco: 'Av. Bady Bassitt, 1500', periodo: 'manha', peso: 15, dia: '27/08' }
-  ];
+  // ------------------------------------------------------------
+  // Cache local (recarregado a cada ação) — evita ficar buscando
+  // tudo de novo a cada re-render da tabela.
+  // ------------------------------------------------------------
+  var cargasCache = [];
+  var solicitacoesCache = []; // todas, qualquer status
+  var solicitacoesPorId = {};
 
   function solById(id) {
-    for (var i = 0; i < MOCK_SOLICITACOES.length; i++) if (MOCK_SOLICITACOES[i].id === id) return MOCK_SOLICITACOES[i];
-    return null;
+    return solicitacoesPorId[id] || null;
   }
 
-  // =================================================================
-  // CargasStore
-  // =================================================================
-  var CargasStore = (function () {
-    var seq = 514;
+  function formatarCargaId(id) {
+    return 'C-' + String(id).padStart(4, '0');
+  }
 
-    var cargas = [
-      {
-        id: 'C-0512', dia: '25/08', status: 'montagem',
-        caminhaoId: 'DVX-1C77', caminhaoLabel: 'DVX-1C77 — Fiat Fiorino',
-        itemIds: ['SL-2201', 'SL-2205', 'SL-2207', 'SL-2202', 'SL-2211']
-      },
-      {
-        id: 'C-0513', dia: '26/08', status: 'montagem',
-        caminhaoId: 'DVX-6D45', caminhaoLabel: 'DVX-6D45 — VUC 3/4 — Volkswagen Delivery',
-        itemIds: ['SL-2204', 'SL-2212', 'SL-2217', 'SL-2216']
-      },
-      {
-        id: 'C-0510', dia: '24/08', status: 'rota',
-        caminhaoId: 'DVX-3A21', caminhaoLabel: 'DVX-3A21 — Fiat Fiorino',
-        motoristaId: 'MOT-01', motoristaLabel: 'Carlos Menezes',
-        rotaId: 'RT-0512', itemIds: [],
-        legacySummary: { regiao: 'Rodovia / Distrito Industrial', solicitacoes: 8, peso: 610, coletas: 5, entregas: 3 }
-      }
-    ];
+  function diasDisponiveis() {
+    var dias = {};
+    solicitacoesCache.forEach(function (s) { if (s.status === 'aprovado') dias[s.dia] = s.dataDesejo; });
+    cargasCache.forEach(function (c) { if (c.dia) dias[c.dia] = c.dataDesejo; });
+    return Object.keys(dias).sort().map(function (dia) { return { dia: dia, iso: dias[dia] }; });
+  }
 
-    function caminhoesEmUsoMontagem(excludeCargaId) {
-      var uso = {};
-      cargas.forEach(function (c) {
-        if (c.status === 'montagem' && c.id !== excludeCargaId) uso[c.caminhaoId] = true;
-      });
-      return uso;
-    }
+  function carregarTudo() {
+    return Promise.all([
+      fetch(API_BASE + '/cargas').then(tratar),
+      SolicitacoesService.listarTodas()
+    ]).then(function (resultados) {
+      var cargasApi = resultados[0];
+      solicitacoesCache = resultados[1];
+      solicitacoesPorId = {};
+      solicitacoesCache.forEach(function (s) { solicitacoesPorId[s.id] = s; });
 
-    function itensEmUso(excludeCargaId) {
-      var uso = {};
-      cargas.forEach(function (c) {
-        if (c.id === excludeCargaId) return;
-        (c.itemIds || []).forEach(function (id) { uso[id] = true; });
-      });
-      return uso;
-    }
-
-    return {
-      listar: function () { return cargas.slice(); },
-      obter: function (id) {
-        var res = null;
-        cargas.forEach(function (c) { if (c.id === id) res = c; });
-        return res;
-      },
-      caminhoesEmUsoMontagem: caminhoesEmUsoMontagem,
-
-      solicitacoesDisponiveis: function (dia, excludeCargaId) {
-        var uso = itensEmUso(excludeCargaId);
-        return MOCK_SOLICITACOES.filter(function (s) { return s.dia === dia && !uso[s.id]; });
-      },
-
-      criar: function (dados) {
-        var novo = {
-          id: 'C-0' + (seq++), dia: dados.dia, status: 'montagem',
-          caminhaoId: dados.caminhaoId, caminhaoLabel: dados.caminhaoLabel,
-          itemIds: dados.itemIds.slice()
+      cargasCache = cargasApi.map(function (c) {
+        var p = c.data.split('-');
+        return {
+          id: formatarCargaId(c.id),
+          rawId: c.id,
+          dia: p.length === 3 ? p[2] + '/' + p[1] : c.data,
+          dataDesejo: c.data,
+          status: c.status, // 'montagem' | 'pendente' | 'andamento' | 'concluida'
+          caminhaoId: c.caminhaoId,
+          caminhaoLabel: c.caminhaoLabel,
+          capacidade: c.capacidadeCaminhao,
+          motoristaId: c.motoristaId,
+          motoristaLabel: c.motoristaLabel,
+          solicitacaoIds: c.solicitacaoIds
         };
-        cargas.push(novo);
-        return novo;
-      },
-
-      atualizar: function (id, dados) {
-        var carga = this.obter(id);
-        if (!carga) return null;
-        if (dados.caminhaoId) { carga.caminhaoId = dados.caminhaoId; carga.caminhaoLabel = dados.caminhaoLabel; }
-        if (dados.itemIds) carga.itemIds = dados.itemIds.slice();
-        return carga;
-      },
-
-      excluir: function (id) {
-        cargas = cargas.filter(function (c) { return c.id !== id; });
-      },
-
-      marcarEmRota: function (id, motoristaId, motoristaLabel, rotaId) {
-        var carga = this.obter(id);
-        if (!carga) return null;
-        carga.status = 'rota';
-        carga.motoristaId = motoristaId;
-        carga.motoristaLabel = motoristaLabel;
-        carga.rotaId = rotaId;
-        return carga;
-      }
-    };
-  })();
+      });
+    });
+  }
 
   // =================================================================
   // Listagem (tabela com dropdown)
   // =================================================================
   function computeResumo(carga) {
-    var itens = (carga.itemIds || []).map(solById).filter(Boolean);
-    var zonas = {};
-    itens.forEach(function (it) { zonas[it.zona] = true; });
+    var itens = (carga.solicitacaoIds || []).map(solById).filter(Boolean);
+    var cidades = {};
+    itens.forEach(function (it) { if (it.cidade) cidades[it.cidade] = true; });
 
-    var resumo = {
-      regiao: Object.keys(zonas).join(' / ') || '—',
+    return {
+      regiao: Object.keys(cidades).join(' / ') || '—',
       solicitacoes: itens.length,
       peso: itens.reduce(function (s, it) { return s + it.peso; }, 0),
-      coletas: itens.filter(function (it) { return it.tipo === 'coleta'; }).length,
-      entregas: itens.filter(function (it) { return it.tipo === 'entrega'; }).length,
       itens: itens
     };
-
-    // Cargas antigas (já em rota) que só têm um resumo legado, sem itens detalhados
-    if (carga.legacySummary && !itens.length) {
-      resumo.regiao = carga.legacySummary.regiao;
-      resumo.solicitacoes = carga.legacySummary.solicitacoes;
-      resumo.peso = carga.legacySummary.peso;
-      resumo.coletas = carga.legacySummary.coletas;
-      resumo.entregas = carga.legacySummary.entregas;
-    }
-
-    return resumo;
-  }
-
-  function capacidadeDoCaminhao(caminhaoId) {
-    var c = caminhoesCache[caminhaoId];
-    return c ? c.capacidade : null;
   }
 
   function formatUso(peso, capacidade) {
     var pesoTxt = peso.toLocaleString('pt-BR') + ' kg';
     if (!capacidade) return pesoTxt;
-    return pesoTxt + ' / ' + capacidade.toLocaleString('pt-BR') + ' kg';
+    return pesoTxt + ' / ' + Number(capacidade).toLocaleString('pt-BR') + ' kg';
   }
 
   function renderLinhaCarga(carga) {
     var resumo = computeResumo(carga);
-    var capacidade = capacidadeDoCaminhao(carga.caminhaoId);
-    var over = capacidade ? resumo.peso > capacidade : false;
-    var usoTxt = formatUso(resumo.peso, capacidade);
-    var isRota = carga.status === 'rota';
+    var over = carga.capacidade ? resumo.peso > carga.capacidade : false;
+    var usoTxt = formatUso(resumo.peso, carga.capacidade);
+    var emMontagem = carga.status === 'montagem';
     var isOpen = !!openRows[carga.id];
 
-    var statusBadge = isRota
-      ? '<span class="badge b-rota">Em rota</span>'
-      : '<span class="badge b-carga">Em montagem</span>';
+    var statusBadge = emMontagem
+      ? '<span class="badge b-carga">Em montagem</span>'
+      : '<span class="badge b-rota">' + (carga.status === 'concluida' ? 'Concluída' : carga.status === 'andamento' ? 'Em andamento' : 'Em rota') + '</span>';
 
     var acoes = '<div class="row-actions">';
-    if (!isRota && resumo.solicitacoes) {
+    if (emMontagem && resumo.solicitacoes) {
       acoes += '<button class="icon-btn approve btn-rota-carga" data-id="' + carga.id + '" title="Gerar rota">' + ROUTE_ICON + '</button>';
     }
-    if (isRota) {
-      acoes += '<button class="icon-btn btn-ver-rota" data-rota="' + carga.rotaId + '" title="Ver rota vinculada">' + VIEW_ICON + '</button>';
+    if (!emMontagem) {
+      acoes += '<button class="icon-btn btn-ver-rota" data-rota="' + carga.id + '" title="Ver rota vinculada">' + VIEW_ICON + '</button>';
     }
-    acoes += '<button class="icon-btn btn-editar-carga' + (isRota ? ' disabled' : '') + '" data-id="' + carga.id + '" title="' + (isRota ? 'Carga já está em rota' : 'Editar carga') + '">' + PENCIL_ICON + '</button>';
-    acoes += '<button class="icon-btn reject btn-excluir-carga' + (isRota ? ' disabled' : '') + '" data-id="' + carga.id + '" title="' + (isRota ? 'Carga já está em rota' : 'Excluir carga') + '">' + TRASH_ICON + '</button>';
+    acoes += '<button class="icon-btn btn-editar-carga' + (emMontagem ? '' : ' disabled') + '" data-id="' + carga.id + '" title="' + (emMontagem ? 'Editar carga' : 'Carga já está em rota') + '">' + PENCIL_ICON + '</button>';
+    acoes += '<button class="icon-btn reject btn-excluir-carga' + (emMontagem ? '' : ' disabled') + '" data-id="' + carga.id + '" title="' + (emMontagem ? 'Excluir carga' : 'Carga já está em rota') + '">' + TRASH_ICON + '</button>';
     acoes += '</div>';
 
     var linhaPrincipal = '' +
@@ -289,29 +214,26 @@
     var linhaDropdown = '' +
       '<tr class="carga-sub-row' + (isOpen ? '' : ' hidden') + '" data-sub="' + carga.id + '">' +
         '<td colspan="9">' +
-          '<div class="sub-table-wrap">' + renderSubTabela(carga, resumo, usoTxt) + '</div>' +
+          '<div class="sub-table-wrap">' + renderSubTabela(carga, resumo) + '</div>' +
         '</td>' +
       '</tr>';
 
     return linhaPrincipal + linhaDropdown;
   }
 
-  function renderSubTabela(carga, resumo, usoTxt) {
+  function renderSubTabela(carga, resumo) {
     if (!resumo.itens.length) {
       return '<div class="sub-table-empty">Nenhuma solicitação detalhada para esta carga.</div>';
     }
 
     var linhas = resumo.itens.map(function (it) {
-      var tipoTxt = it.tipo === 'coleta'
-        ? '<span class="tag-coleta"><i class="fas fa-arrow-up"></i> Coleta</span>'
-        : '<span class="tag-entrega"><i class="fas fa-arrow-down"></i> Entrega</span>';
       return '' +
         '<tr>' +
-          '<td class="mono">' + it.id + '</td>' +
+          '<td class="mono">SL-' + String(it.id).padStart(4, '0') + '</td>' +
           '<td>' + it.cliente + '</td>' +
           '<td>' + (carga.motoristaLabel || '<span class="cell-sub">A definir</span>') + '</td>' +
-          '<td>' + it.endereco + '</td>' +
-          '<td>' + tipoTxt + '</td>' +
+          '<td><span class="tag-coleta"><i class="fas fa-arrow-up"></i> ' + it.enderecoColeta + '</span></td>' +
+          '<td><span class="tag-entrega"><i class="fas fa-arrow-down"></i> ' + it.enderecoEntrega + '</span></td>' +
         '</tr>';
     }).join('');
 
@@ -322,8 +244,8 @@
             '<th>Solicitação</th>' +
             '<th>Cliente</th>' +
             '<th>Motorista</th>' +
-            '<th>Endereço</th>' +
-            '<th>Tipo</th>' +
+            '<th>Coleta</th>' +
+            '<th>Entrega</th>' +
           '</tr>' +
         '</thead>' +
         '<tbody>' + linhas + '</tbody>' +
@@ -332,8 +254,8 @@
 
   function atualizarContagens(cargas) {
     var total = cargas.length;
-    var montagem = cargas.filter(function(c) { return c.status === 'montagem'; }).length;
-    var rota = cargas.filter(function(c) { return c.status === 'rota'; }).length;
+    var montagem = cargas.filter(function (c) { return c.status === 'montagem'; }).length;
+    var rota = cargas.filter(function (c) { return c.status !== 'montagem'; }).length;
 
     var countAll = document.getElementById('filterCountAllCargas');
     var countMontagem = document.getElementById('filterCountMontagemCargas');
@@ -344,18 +266,27 @@
     if (countRota) countRota.textContent = rota;
   }
 
-  function renderTabela() {
-    var cargas = CargasStore.listar();
+  function atualizarFiltroData() {
+    if (!filterDataSelect) return;
+    var atual = filterDataSelect.value;
+    var opcoes = diasDisponiveis();
+    filterDataSelect.innerHTML = '<option value="all">Todas as datas</option>' +
+      opcoes.map(function (o) { return '<option value="' + o.dia + '">' + o.dia + '</option>'; }).join('');
+    if (opcoes.some(function (o) { return o.dia === atual; })) filterDataSelect.value = atual;
+  }
 
-    // Aplicar filtros
-    var cargasFiltradas = cargas.filter(function(carga) {
+  function renderTabela() {
+    var cargas = cargasCache;
+
+    var cargasFiltradas = cargas.filter(function (carga) {
       if (currentFilter === 'montagem' && carga.status !== 'montagem') return false;
-      if (currentFilter === 'rota' && carga.status !== 'rota') return false;
+      if (currentFilter === 'rota' && carga.status === 'montagem') return false;
       if (currentDataFilter !== 'all' && carga.dia !== currentDataFilter) return false;
       return true;
     });
 
     atualizarContagens(cargas);
+    atualizarFiltroData();
 
     if (resumoEl) {
       var filtroTexto = '';
@@ -375,8 +306,11 @@
     bindTabelaEvents();
   }
 
+  function recarregarERenderizar() {
+    return carregarTudo().then(renderTabela);
+  }
+
   function bindTabelaEvents() {
-    // Dropdown: expandir/recolher solicitações da carga
     tabelaEl.querySelectorAll('[data-toggle]').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
@@ -406,7 +340,7 @@
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
         if (btn.classList.contains('disabled')) return;
-        var carga = CargasStore.obter(btn.dataset.id);
+        var carga = cargasCache.filter(function (c) { return c.id === btn.dataset.id; })[0];
         if (carga) abrirEdicao(carga);
       });
     });
@@ -416,6 +350,8 @@
         e.stopPropagation();
         if (btn.classList.contains('disabled')) return;
         var cargaId = btn.dataset.id;
+        var carga = cargasCache.filter(function (c) { return c.id === cargaId; })[0];
+        if (!carga) return;
         UI.confirmar({
           title: 'Excluir carga',
           message: 'Excluir a carga ' + cargaId + '? As solicitações voltam a ficar disponíveis para entrar em outra carga.',
@@ -423,10 +359,15 @@
           tone: 'danger'
         }).then(function (ok) {
           if (!ok) return;
-          CargasStore.excluir(cargaId);
-          delete openRows[cargaId];
-          renderTabela();
-          UI.toast('Carga ' + cargaId + ' excluída com sucesso!');
+          fetch(API_BASE + '/cargas/' + carga.rawId, { method: 'DELETE' }).then(function (res) {
+            if (!res.ok && res.status !== 204) throw new Error('Não foi possível excluir a carga.');
+            delete openRows[cargaId];
+            return recarregarERenderizar();
+          }).then(function () {
+            UI.toast('Carga ' + cargaId + ' excluída com sucesso!');
+          }).catch(function (err) {
+            UI.toast(err.message || 'Não foi possível excluir a carga.');
+          });
         });
       });
     });
@@ -434,15 +375,20 @@
     tabelaEl.querySelectorAll('.btn-rota-carga').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
-        var carga = CargasStore.obter(btn.dataset.id);
+        var carga = cargasCache.filter(function (c) { return c.id === btn.dataset.id; })[0];
         if (!carga) return;
-        abrirModalAtribuicao(carga, function (motoristaId, motoristaLabel) {
-          var rotaId = 'RT-' + Math.floor(1000 + Math.random() * 9000);
-          CargasStore.marcarEmRota(carga.id, motoristaId, motoristaLabel, rotaId);
-          FrotaService.atualizarStatusCaminhao(carga.caminhaoId, 'em_rota');
-          FrotaService.atualizarStatusMotorista(motoristaId, 'em_rota');
-          UI.toast('Rota ' + rotaId + ' gerada a partir da carga ' + carga.id + ', com ' + motoristaLabel + ' (' + carga.caminhaoLabel + '). Ela já pode ser ajustada na tela de Rotas.');
-          renderTabela();
+        abrirModalAtribuicao(carga, function (motoristaId) {
+          fetch(API_BASE + '/cargas/' + carga.rawId + '/gerar-rota', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ motoristaId: motoristaId })
+          }).then(tratar).then(function () {
+            return recarregarERenderizar();
+          }).then(function () {
+            UI.toast('Rota gerada a partir da carga ' + carga.id + '. Ela já pode ser ajustada na tela de Rotas.');
+          }).catch(function (err) {
+            UI.toast(err.message || 'Não foi possível gerar a rota.');
+          });
         });
       });
     });
@@ -459,12 +405,12 @@
   var onConfirmarAtribuicao = null;
 
   function abrirModalAtribuicao(carga, onConfirm) {
-    if (!modalAtribuirOverlay) { onConfirm(null, null); return; }
+    if (!modalAtribuirOverlay) { onConfirm(null); return; }
     onConfirmarAtribuicao = onConfirm;
     atribuirCaminhaoLabelEl.textContent = carga.caminhaoLabel || carga.caminhaoId;
     FrotaService.listarMotoristasDisponiveis().then(function (lista) {
       selectMotorista.innerHTML = '<option value="">Selecione…</option>' + lista.map(function (m) {
-        return '<option value="' + m.id + '" data-label="' + m.nome + '">' + m.nome + '</option>';
+        return '<option value="' + m.id + '">' + m.nome + '</option>';
       }).join('');
       if (!lista.length) selectMotorista.innerHTML = '<option value="">Nenhum motorista disponível</option>';
     });
@@ -484,17 +430,15 @@
       var field = selectMotorista.closest('.field');
       if (!selectMotorista.value) { field.classList.add('invalid'); return; }
       field.classList.remove('invalid');
-      var opt = selectMotorista.options[selectMotorista.selectedIndex];
       var callback = onConfirmarAtribuicao;
       var motoristaId = selectMotorista.value;
-      var motoristaLabel = opt ? opt.dataset.label : '';
       fecharAtribuicaoModal();
-      if (callback) callback(motoristaId, motoristaLabel);
+      if (callback) callback(motoristaId);
     });
   }
 
   // =================================================================
-  // Modal: Montar / editar carga (wizard de 2 passos)
+  // Modal: Montar carga (wizard de 2 passos)
   // =================================================================
   var modalMontarOverlay = document.getElementById('modalMontarOverlay');
   var btnMontarCarga = document.getElementById('btnMontarCarga');
@@ -507,27 +451,26 @@
   var montarStep2SubEl = document.getElementById('montarStep2Sub');
   var montarSummaryEl = document.getElementById('montarSummary');
   var montarWarningsEl = document.getElementById('montarWarnings');
-  var montarPoolColetaEl = document.getElementById('montarPoolColeta');
-  var montarPoolEntregaEl = document.getElementById('montarPoolEntrega');
-  var montarCountColetaEl = document.getElementById('montarCountColeta');
-  var montarCountEntregaEl = document.getElementById('montarCountEntrega');
+  var montarPoolEl = document.getElementById('montarPoolSolicitacoes');
+  var montarCountEl = document.getElementById('montarCountSolicitacoes');
 
-  var wizard = { step: 1, dia: DAYS[0], caminhaoId: null, caminhaoLabel: null, capacidade: 0, selected: {}, editingId: null, trucksCache: [] };
+  var wizard = { step: 1, dia: null, dataDesejo: null, caminhaoId: null, caminhaoLabel: null, capacidade: 0, selected: {}, trucksCache: [] };
 
-  function abrirWizard(cargaParaEditar) {
+  function solicitacoesLivresNoDia(dia) {
+    var usadas = {};
+    cargasCache.forEach(function (c) { (c.solicitacaoIds || []).forEach(function (id) { usadas[id] = true; }); });
+    return solicitacoesCache.filter(function (s) { return s.status === 'aprovado' && s.dia === dia && !usadas[s.id]; });
+  }
+
+  function abrirWizard() {
+    var opcoes = diasDisponiveis();
     wizard = {
       step: 1,
-      dia: cargaParaEditar ? cargaParaEditar.dia : DAYS[0],
-      caminhaoId: cargaParaEditar ? cargaParaEditar.caminhaoId : null,
-      caminhaoLabel: cargaParaEditar ? cargaParaEditar.caminhaoLabel : null,
-      capacidade: 0,
-      selected: {},
-      editingId: cargaParaEditar ? cargaParaEditar.id : null,
-      trucksCache: []
+      dia: opcoes.length ? opcoes[0].dia : null,
+      dataDesejo: opcoes.length ? opcoes[0].iso : null,
+      caminhaoId: null, caminhaoLabel: null, capacidade: 0,
+      selected: {}, trucksCache: []
     };
-    if (cargaParaEditar) {
-      cargaParaEditar.itemIds.forEach(function (id) { wizard.selected[id] = true; });
-    }
     if (modalMontarOverlay) modalMontarOverlay.classList.add('open');
     renderStep1();
     goToStep(1);
@@ -551,24 +494,39 @@
   }
 
   // ---------------- Passo 1: dia + caminhão ----------------
+  function caminhoesEmUsoMontagem(dia, excludeCargaId) {
+    var uso = {};
+    cargasCache.forEach(function (c) {
+      if (c.status === 'montagem' && c.dia === dia && c.id !== excludeCargaId) uso[c.caminhaoId] = true;
+    });
+    return uso;
+  }
+
   function renderStep1() {
+    var opcoes = diasDisponiveis();
+
     if (montarDayTabsEl) {
-      montarDayTabsEl.innerHTML = DAYS.map(function (d) {
-        var pendentes = CargasStore.solicitacoesDisponiveis(d, wizard.editingId).length;
-        return '<div class="day-tab' + (d === wizard.dia ? ' active' : '') + '" data-day="' + d + '">' + d + ' <span class="n">' + pendentes + '</span></div>';
-      }).join('');
-      montarDayTabsEl.querySelectorAll('[data-day]').forEach(function (tab) {
-        tab.addEventListener('click', function () {
-          wizard.dia = tab.dataset.day;
-          wizard.selected = {};
-          renderStep1();
+      if (!opcoes.length) {
+        montarDayTabsEl.innerHTML = '<div class="montar-pool-empty">Nenhuma solicitação aprovada pendente de carga.</div>';
+      } else {
+        montarDayTabsEl.innerHTML = opcoes.map(function (o) {
+          var pendentes = solicitacoesLivresNoDia(o.dia).length;
+          return '<div class="day-tab' + (o.dia === wizard.dia ? ' active' : '') + '" data-day="' + o.dia + '" data-iso="' + o.iso + '">' + o.dia + ' <span class="n">' + pendentes + '</span></div>';
+        }).join('');
+        montarDayTabsEl.querySelectorAll('[data-day]').forEach(function (tab) {
+          tab.addEventListener('click', function () {
+            wizard.dia = tab.dataset.day;
+            wizard.dataDesejo = tab.dataset.iso;
+            wizard.selected = {};
+            renderStep1();
+          });
         });
-      });
+      }
     }
 
     FrotaService.listarCaminhoes().then(function (lista) {
       wizard.trucksCache = lista;
-      var emUso = CargasStore.caminhoesEmUsoMontagem(wizard.editingId);
+      var emUso = caminhoesEmUsoMontagem(wizard.dia, null);
 
       if (!lista.length) {
         truckSelectGridEl.innerHTML = '<div class="truck-empty">Nenhum caminhão cadastrado. Cadastre um em "Caminhões".</div>';
@@ -584,7 +542,7 @@
           '<div class="' + classes + '" data-caminhao="' + c.id + '" data-label="' + c.id + ' — ' + c.modelo + '" data-capacidade="' + c.capacidade + '">' +
             '<div class="tc-id">' + c.id + '</div>' +
             '<div class="tc-modelo">' + c.modelo + '</div>' +
-            '<div class="tc-cap">' + c.capacidade.toLocaleString('pt-BR') + ' kg · ' + statusTxt + '</div>' +
+            '<div class="tc-cap">' + Number(c.capacidade).toLocaleString('pt-BR') + ' kg · ' + statusTxt + '</div>' +
           '</div>';
       }).join('');
 
@@ -599,39 +557,19 @@
         });
       });
 
-      if (btnAvancarMontar) btnAvancarMontar.disabled = !wizard.caminhaoId;
+      if (btnAvancarMontar) btnAvancarMontar.disabled = !wizard.caminhaoId || !wizard.dia;
     });
   }
 
   if (btnAvancarMontar) {
     btnAvancarMontar.addEventListener('click', function () {
-      if (!wizard.caminhaoId) return;
+      if (!wizard.caminhaoId || !wizard.dia) return;
       goToStep(2);
     });
   }
   if (btnVoltarMontar) btnVoltarMontar.addEventListener('click', function () { goToStep(1); });
 
   // ---------------- Passo 2: solicitações ----------------
-  function preSelecionarPorRegiao(itens) {
-    if (Object.keys(wizard.selected).length) return;
-    if (!itens.length) return;
-
-    var pesoPorZona = {};
-    itens.forEach(function (it) { pesoPorZona[it.zona] = (pesoPorZona[it.zona] || 0) + 1; });
-    var zonaDominante = Object.keys(pesoPorZona).sort(function (a, b) { return pesoPorZona[b] - pesoPorZona[a]; })[0];
-
-    var candidatos = itens.filter(function (it) { return it.zona === zonaDominante; })
-      .sort(function (a, b) { return a.peso - b.peso; });
-
-    var pesoAtual = 0;
-    candidatos.forEach(function (it) {
-      if (pesoAtual + it.peso <= wizard.capacidade) {
-        wizard.selected[it.id] = true;
-        pesoAtual += it.peso;
-      }
-    });
-  }
-
   function renderMontarItem(it) {
     var checked = !!wizard.selected[it.id];
     return '' +
@@ -639,7 +577,7 @@
         '<input type="checkbox"' + (checked ? ' checked' : '') + '>' +
         '<div class="mi-left">' +
           '<div class="mi-cliente">' + it.cliente + '</div>' +
-          '<div class="mi-id">' + it.id + ' · <span class="mi-zona">' + it.zona + '</span></div>' +
+          '<div class="mi-id">SL-' + String(it.id).padStart(4, '0') + (it.cidade ? ' · <span class="mi-zona">' + it.cidade + '</span>' : '') + '</div>' +
         '</div>' +
         '<div class="mi-peso">' + it.peso + 'kg</div>' +
       '</label>';
@@ -647,19 +585,13 @@
 
   function renderStep2() {
     if (montarStep2SubEl) {
-      montarStep2SubEl.textContent = 'Dia ' + wizard.dia + ' · ' + wizard.caminhaoLabel + ' (' + wizard.capacidade.toLocaleString('pt-BR') + ' kg). Itens da mesma região são pré-selecionados.';
+      montarStep2SubEl.textContent = 'Dia ' + wizard.dia + ' · ' + wizard.caminhaoLabel + ' (' + wizard.capacidade.toLocaleString('pt-BR') + ' kg).';
     }
 
-    var itens = CargasStore.solicitacoesDisponiveis(wizard.dia, wizard.editingId);
-    preSelecionarPorRegiao(itens);
+    var itens = solicitacoesLivresNoDia(wizard.dia);
 
-    var coletas = itens.filter(function (it) { return it.tipo === 'coleta'; });
-    var entregas = itens.filter(function (it) { return it.tipo === 'entrega'; });
-
-    montarPoolColetaEl.innerHTML = coletas.length ? coletas.map(renderMontarItem).join('') : '<div class="montar-pool-empty">Nenhuma coleta livre neste dia.</div>';
-    montarPoolEntregaEl.innerHTML = entregas.length ? entregas.map(renderMontarItem).join('') : '<div class="montar-pool-empty">Nenhuma entrega livre neste dia.</div>';
-    montarCountColetaEl.textContent = coletas.length;
-    montarCountEntregaEl.textContent = entregas.length;
+    montarPoolEl.innerHTML = itens.length ? itens.map(renderMontarItem).join('') : '<div class="montar-pool-empty">Nenhuma solicitação aprovada livre neste dia.</div>';
+    montarCountEl.textContent = itens.length;
 
     document.querySelectorAll('#modalMontarOverlay .montar-item').forEach(function (row) {
       row.addEventListener('click', function (e) {
@@ -683,18 +615,29 @@
       '<span><strong>' + selecionados.length + '</strong> solicitações selecionadas</span>' +
       '<span><strong>' + peso + 'kg</strong> de ' + wizard.capacidade.toLocaleString('pt-BR') + 'kg de capacidade' + (over ? ' — acima do limite' : '') + '</span>';
 
-    if (montarWarningsEl) {
-      var zonas = {};
-      selecionados.forEach(function (it) { zonas[it.zona] = true; });
-      var zonasList = Object.keys(zonas);
-      var mixedZones = zonasList.length > 1;
-
-      montarWarningsEl.innerHTML = mixedZones
-        ? '<div class="sugg-warning">⚠ Zonas diferentes nesta carga: ' + zonasList.join(', ') + '. Confirme antes de gerar a rota.</div>'
-        : '';
-    }
-
+    if (montarWarningsEl) montarWarningsEl.innerHTML = '';
     if (btnConcluirMontar) btnConcluirMontar.disabled = !selecionados.length;
+  }
+
+  function salvarNovaCarga(ids, peso) {
+    return fetch(API_BASE + '/cargas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ caminhaoId: wizard.caminhaoId, data: wizard.dataDesejo })
+    }).then(tratar).then(function (carga) {
+      return fetch(API_BASE + '/cargas/' + carga.id + '/itens', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ solicitacaoIds: ids.map(Number) })
+      }).then(tratar);
+    }).then(function () {
+      fecharWizard();
+      return recarregarERenderizar();
+    }).then(function () {
+      UI.toast('Carga montada com sucesso!');
+    }).catch(function (err) {
+      UI.toast(err.message || 'Não foi possível montar a carga.');
+    });
   }
 
   if (btnConcluirMontar) {
@@ -704,34 +647,20 @@
 
       var peso = ids.map(solById).filter(Boolean).reduce(function (s, it) { return s + it.peso; }, 0);
 
-      function concluir() {
-        if (wizard.editingId) {
-          CargasStore.atualizar(wizard.editingId, { caminhaoId: wizard.caminhaoId, caminhaoLabel: wizard.caminhaoLabel, itemIds: ids });
-        } else {
-          CargasStore.criar({ dia: wizard.dia, caminhaoId: wizard.caminhaoId, caminhaoLabel: wizard.caminhaoLabel, itemIds: ids });
-        }
-
-        fecharWizard();
-        renderTabela();
-        UI.toast('Carga montada com sucesso!');
-      }
-
       if (peso > wizard.capacidade) {
         UI.confirmar({
           title: 'Peso acima da capacidade',
           message: 'O peso selecionado (' + peso + 'kg) está acima da capacidade do caminhão (' + wizard.capacidade + 'kg). Concluir mesmo assim?',
           confirmLabel: 'Concluir mesmo assim',
           tone: 'danger'
-        }).then(function (ok) {
-          if (ok) concluir();
-        });
+        }).then(function (ok) { if (ok) salvarNovaCarga(ids, peso); });
       } else {
-        concluir();
+        salvarNovaCarga(ids, peso);
       }
     });
   }
 
-  if (btnMontarCarga) btnMontarCarga.addEventListener('click', function () { abrirWizard(null); });
+  if (btnMontarCarga) btnMontarCarga.addEventListener('click', abrirWizard);
   if (fecharModalMontarBtn) fecharModalMontarBtn.addEventListener('click', fecharWizard);
   Utils.ligarFechamentoModal(modalMontarOverlay, fecharWizard);
 
@@ -747,23 +676,22 @@
   var editarCaminhaoSelectEl = document.getElementById('editarCaminhaoSelect');
   var editarSummaryEl = document.getElementById('editarSummary');
   var editarWarningsEl = document.getElementById('editarWarnings');
-  var editarPoolColetaEl = document.getElementById('editarPoolColeta');
-  var editarPoolEntregaEl = document.getElementById('editarPoolEntrega');
-  var editarCountColetaEl = document.getElementById('editarCountColeta');
-  var editarCountEntregaEl = document.getElementById('editarCountEntrega');
+  var editarPoolEl = document.getElementById('editarPoolSolicitacoes');
+  var editarCountEl = document.getElementById('editarCountSolicitacoes');
 
-  var editState = { cargaId: null, dia: null, caminhaoId: null, caminhaoLabel: null, capacidade: 0, selected: {} };
+  var editState = { cargaId: null, rawId: null, dia: null, caminhaoId: null, caminhaoLabel: null, capacidade: 0, selected: {} };
 
   function abrirEdicao(carga) {
     editState = {
       cargaId: carga.id,
+      rawId: carga.rawId,
       dia: carga.dia,
       caminhaoId: carga.caminhaoId,
       caminhaoLabel: carga.caminhaoLabel,
-      capacidade: 0,
+      capacidade: carga.capacidade || 0,
       selected: {}
     };
-    carga.itemIds.forEach(function (id) { editState.selected[id] = true; });
+    (carga.solicitacaoIds || []).forEach(function (id) { editState.selected[id] = true; });
 
     if (editarTituloEl) editarTituloEl.textContent = 'Editar carga ' + carga.id;
     if (editarSubEl) editarSubEl.textContent = 'Dia ' + carga.dia + ' · ajuste o caminhão ou as solicitações desta carga.';
@@ -779,7 +707,7 @@
   function renderEditarCaminhaoSelect() {
     if (!editarCaminhaoSelectEl) return;
     FrotaService.listarCaminhoes().then(function (lista) {
-      var emUso = CargasStore.caminhoesEmUsoMontagem(editState.cargaId);
+      var emUso = caminhoesEmUsoMontagem(editState.dia, editState.cargaId);
 
       editarCaminhaoSelectEl.innerHTML = lista.map(function (c) {
         var indisponivel = c.status !== 'disponivel' || emUso[c.id];
@@ -788,7 +716,7 @@
         return '<option value="' + c.id + '" data-label="' + c.id + ' — ' + c.modelo + '" data-capacidade="' + c.capacidade + '"' +
           ((indisponivel && !ehAtual) ? ' disabled' : '') +
           (ehAtual ? ' selected' : '') + '>' +
-          c.id + ' — ' + c.modelo + ' · ' + c.capacidade.toLocaleString('pt-BR') + ' kg (' + statusTxt + ')' +
+          c.id + ' — ' + c.modelo + ' · ' + Number(c.capacidade).toLocaleString('pt-BR') + ' kg (' + statusTxt + ')' +
         '</option>';
       }).join('');
 
@@ -813,15 +741,22 @@
     });
   }
 
-  function renderEditarItens() {
-    var itens = CargasStore.solicitacoesDisponiveis(editState.dia, editState.cargaId);
-    var coletas = itens.filter(function (it) { return it.tipo === 'coleta'; });
-    var entregas = itens.filter(function (it) { return it.tipo === 'entrega'; });
+  function solicitacoesLivresParaEdicao() {
+    var usadas = {};
+    cargasCache.forEach(function (c) {
+      if (c.id === editState.cargaId) return;
+      (c.solicitacaoIds || []).forEach(function (id) { usadas[id] = true; });
+    });
+    return solicitacoesCache.filter(function (s) {
+      return s.dia === editState.dia && (s.status === 'aprovado' || editState.selected[s.id]) && !usadas[s.id];
+    });
+  }
 
-    if (editarPoolColetaEl) editarPoolColetaEl.innerHTML = coletas.length ? coletas.map(renderMontarItemEditar).join('') : '<div class="montar-pool-empty">Nenhuma coleta livre neste dia.</div>';
-    if (editarPoolEntregaEl) editarPoolEntregaEl.innerHTML = entregas.length ? entregas.map(renderMontarItemEditar).join('') : '<div class="montar-pool-empty">Nenhuma entrega livre neste dia.</div>';
-    if (editarCountColetaEl) editarCountColetaEl.textContent = coletas.length;
-    if (editarCountEntregaEl) editarCountEntregaEl.textContent = entregas.length;
+  function renderEditarItens() {
+    var itens = solicitacoesLivresParaEdicao();
+
+    editarPoolEl.innerHTML = itens.length ? itens.map(renderMontarItemEditar).join('') : '<div class="montar-pool-empty">Nenhuma solicitação livre neste dia.</div>';
+    editarCountEl.textContent = itens.length;
 
     document.querySelectorAll('#modalEditarOverlay .montar-item').forEach(function (row) {
       row.addEventListener('click', function (e) {
@@ -842,7 +777,7 @@
         '<input type="checkbox"' + (checked ? ' checked' : '') + '>' +
         '<div class="mi-left">' +
           '<div class="mi-cliente">' + it.cliente + '</div>' +
-          '<div class="mi-id">' + it.id + ' · <span class="mi-zona">' + it.zona + '</span></div>' +
+          '<div class="mi-id">SL-' + String(it.id).padStart(4, '0') + (it.cidade ? ' · <span class="mi-zona">' + it.cidade + '</span>' : '') + '</div>' +
         '</div>' +
         '<div class="mi-peso">' + it.peso + 'kg</div>' +
       '</label>';
@@ -859,17 +794,29 @@
         '<span><strong>' + selecionados.length + '</strong> solicitações selecionadas</span>' +
         '<span><strong>' + peso + 'kg</strong> de ' + editState.capacidade.toLocaleString('pt-BR') + 'kg de capacidade' + (over ? ' — acima do limite' : '') + '</span>';
     }
-
-    if (editarWarningsEl) {
-      var zonas = {};
-      selecionados.forEach(function (it) { zonas[it.zona] = true; });
-      var zonasList = Object.keys(zonas);
-      editarWarningsEl.innerHTML = zonasList.length > 1
-        ? '<div class="sugg-warning">⚠ Zonas diferentes nesta carga: ' + zonasList.join(', ') + '. Confirme antes de gerar a rota.</div>'
-        : '';
-    }
-
+    if (editarWarningsEl) editarWarningsEl.innerHTML = '';
     if (btnSalvarEditar) btnSalvarEditar.disabled = !selecionados.length;
+  }
+
+  function salvarEdicao(ids, peso) {
+    return fetch(API_BASE + '/cargas/' + editState.rawId + '/caminhao', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ caminhaoId: editState.caminhaoId })
+    }).then(tratar).then(function () {
+      return fetch(API_BASE + '/cargas/' + editState.rawId + '/itens', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ solicitacaoIds: ids.map(Number) })
+      }).then(tratar);
+    }).then(function () {
+      fecharEdicao();
+      return recarregarERenderizar();
+    }).then(function () {
+      UI.toast('Carga atualizada com sucesso!');
+    }).catch(function (err) {
+      UI.toast(err.message || 'Não foi possível atualizar a carga.');
+    });
   }
 
   if (btnSalvarEditar) {
@@ -879,24 +826,15 @@
 
       var peso = ids.map(solById).filter(Boolean).reduce(function (s, it) { return s + it.peso; }, 0);
 
-      function salvar() {
-        CargasStore.atualizar(editState.cargaId, { caminhaoId: editState.caminhaoId, caminhaoLabel: editState.caminhaoLabel, itemIds: ids });
-        fecharEdicao();
-        renderTabela();
-        UI.toast('Carga atualizada com sucesso!');
-      }
-
       if (peso > editState.capacidade) {
         UI.confirmar({
           title: 'Peso acima da capacidade',
           message: 'O peso selecionado (' + peso + 'kg) está acima da capacidade do caminhão (' + editState.capacidade + 'kg). Salvar mesmo assim?',
           confirmLabel: 'Salvar mesmo assim',
           tone: 'danger'
-        }).then(function (ok) {
-          if (ok) salvar();
-        });
+        }).then(function (ok) { if (ok) salvarEdicao(ids, peso); });
       } else {
-        salvar();
+        salvarEdicao(ids, peso);
       }
     });
   }
@@ -908,9 +846,9 @@
   // =================================================================
   // Eventos dos filtros
   // =================================================================
-  filterChips.forEach(function(chip) {
-    chip.addEventListener('click', function() {
-      filterChips.forEach(function(c) { c.classList.remove('active'); });
+  filterChips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      filterChips.forEach(function (c) { c.classList.remove('active'); });
       this.classList.add('active');
       currentFilter = this.dataset.filter;
       renderTabela();
@@ -918,10 +856,10 @@
   });
 
   if (filterDataSelect) {
-    filterDataSelect.addEventListener('change', function() {
+    filterDataSelect.addEventListener('change', function () {
       currentDataFilter = this.value;
       if (currentDataFilter !== 'all') {
-        filterChips.forEach(function(c) { c.classList.remove('active'); });
+        filterChips.forEach(function (c) { c.classList.remove('active'); });
         document.querySelector('#filterToolbarCargas .chip[data-filter="all"]').classList.add('active');
         currentFilter = 'all';
       }
@@ -930,7 +868,7 @@
   }
 
   if (limparDataBtn) {
-    limparDataBtn.addEventListener('click', function() {
+    limparDataBtn.addEventListener('click', function () {
       if (filterDataSelect) {
         filterDataSelect.value = 'all';
         currentDataFilter = 'all';
@@ -942,5 +880,5 @@
   // =================================================================
   // Inicializar
   // =================================================================
-  carregarCaminhoesCache().then(renderTabela);
+  recarregarERenderizar();
 })();

@@ -155,14 +155,20 @@ CREATE TRIGGER trg_caminhoes_atualizado_em
 CREATE TABLE cargas (
     id              BIGSERIAL PRIMARY KEY,
     caminhao_placa  VARCHAR(8)  NOT NULL REFERENCES caminhoes(placa),
-    motorista_id    BIGINT      NOT NULL REFERENCES motoristas(usuario_id),
+    -- NULL enquanto a carga está em montagem (dia + caminhão +
+    -- solicitações escolhidos, motorista ainda não). É definido no
+    -- passo "Gerar rota" da tela de Cargas — ver migração 002.
+    motorista_id    BIGINT      REFERENCES motoristas(usuario_id),
     data            DATE        NOT NULL,
-    status          VARCHAR(20) NOT NULL DEFAULT 'pendente'
-                        CHECK (status IN ('pendente', 'andamento', 'concluida')),
+    status          VARCHAR(20) NOT NULL DEFAULT 'montagem'
+                        CHECK (status IN ('montagem', 'pendente', 'andamento', 'concluida')),
     criado_em       TIMESTAMPTZ NOT NULL DEFAULT now(),
     atualizado_em   TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (caminhao_placa, data),
-    UNIQUE (motorista_id, data)
+    UNIQUE (motorista_id, data),
+    -- só pode ficar sem motorista enquanto ainda está em montagem
+    CONSTRAINT cargas_motorista_exigido_apos_montagem
+        CHECK (status = 'montagem' OR motorista_id IS NOT NULL)
 );
 
 CREATE INDEX idx_cargas_motorista ON cargas(motorista_id);

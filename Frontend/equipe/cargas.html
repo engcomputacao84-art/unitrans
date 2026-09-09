@@ -61,9 +61,6 @@
               <span style="font-size:13px;color:var(--ink-soft);"><i class="far fa-calendar-alt"></i> Data:</span>
               <select id="filterDataCargas" style="border:none;background:transparent;padding:4px 0;font-family:var(--font);font-size:13px;color:var(--ink);outline:none;cursor:pointer;">
                 <option value="all">Todas as datas</option>
-                <option value="25/08">25/08</option>
-                <option value="26/08">26/08</option>
-                <option value="27/08">27/08</option>
               </select>
               <button id="limparDataCargas" style="background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:14px;padding:0 4px;" title="Limpar filtro de data">
                 <i class="fas fa-times"></i>
@@ -142,19 +139,12 @@
       <div class="montar-warnings" id="montarWarnings"></div>
 
       <div class="montar-pools">
-        <div class="pool-panel">
+        <div class="pool-panel" style="flex:1;">
           <div class="pool-panel-head">
-            <span class="tag-coleta"><i class="fas fa-arrow-up"></i> Coletas do dia</span>
-            <span class="pool-count" id="montarCountColeta">0</span>
+            <span class="tag-coleta"><i class="fas fa-box"></i> Solicitações aprovadas do dia</span>
+            <span class="pool-count" id="montarCountSolicitacoes">0</span>
           </div>
-          <div class="pool-list" id="montarPoolColeta"></div>
-        </div>
-        <div class="pool-panel">
-          <div class="pool-panel-head">
-            <span class="tag-entrega"><i class="fas fa-arrow-down"></i> Entregas do dia</span>
-            <span class="pool-count" id="montarCountEntrega">0</span>
-          </div>
-          <div class="pool-list" id="montarPoolEntrega"></div>
+          <div class="pool-list" id="montarPoolSolicitacoes"></div>
         </div>
       </div>
 
@@ -197,19 +187,12 @@
     <div class="montar-warnings" id="editarWarnings"></div>
 
     <div class="montar-pools">
-      <div class="pool-panel">
+      <div class="pool-panel" style="flex:1;">
         <div class="pool-panel-head">
-          <span class="tag-coleta"><i class="fas fa-arrow-up"></i> Coletas do dia</span>
-          <span class="pool-count" id="editarCountColeta">0</span>
+          <span class="tag-coleta"><i class="fas fa-box"></i> Solicitações aprovadas do dia</span>
+          <span class="pool-count" id="editarCountSolicitacoes">0</span>
         </div>
-        <div class="pool-list" id="editarPoolColeta"></div>
-      </div>
-      <div class="pool-panel">
-        <div class="pool-panel-head">
-          <span class="tag-entrega"><i class="fas fa-arrow-down"></i> Entregas do dia</span>
-          <span class="pool-count" id="editarCountEntrega">0</span>
-        </div>
-        <div class="pool-list" id="editarPoolEntrega"></div>
+        <div class="pool-list" id="editarPoolSolicitacoes"></div>
       </div>
     </div>
 

@@ -102,4 +102,44 @@ async function registrarOcorrencia(id, tipoOcorrencia, descricao) {
   return buscarPorId(id);
 }
 
-module.exports = { listar, buscarPorId, marcarConcluida, registrarOcorrencia };
+// Atualiza a posição (ordem) e/ou o horário previsto da parada.
+// Usado na tela da equipe quando a rota é reordenada (arrastar/setas)
+// antes de sair do estado 'pendente'.
+async function atualizarOrdemHora(id, dados) {
+  const patch = {};
+  if (dados && dados.ordem !== undefined) patch.ordem = dados.ordem;
+  if (dados && dados.horaPrevista !== undefined) patch.hora_prevista = dados.horaPrevista;
+  if (Object.keys(patch).length === 0) return buscarPorId(id);
+
+  const { error } = await supabaseService.from('paradas').update(patch).eq('id', id);
+  if (error) throw error;
+  return buscarPorId(id);
+}
+
+// Remove a parada da rota: apaga a linha em `paradas` e devolve a
+// solicitação pro "pool" (carga_id = null, status volta pra 'aprovado')
+// para que a equipe possa montá-la em outra rota depois.
+async function removerDaCarga(id) {
+  const parada = await buscarPorId(id);
+  if (!parada) return { ok: true };
+
+  const { error: erroParada } = await supabaseService.from('paradas').delete().eq('id', id);
+  if (erroParada) throw erroParada;
+
+  const { error: erroSolicitacao } = await supabaseService
+    .from('solicitacoes')
+    .update({ carga_id: null, status: 'aprovado' })
+    .eq('id', parada.solicitacaoId);
+  if (erroSolicitacao) throw erroSolicitacao;
+
+  return { ok: true, cargaId: parada.cargaId, solicitacaoId: parada.solicitacaoId };
+}
+
+module.exports = {
+  listar,
+  buscarPorId,
+  marcarConcluida,
+  registrarOcorrencia,
+  atualizarOrdemHora,
+  removerDaCarga
+};

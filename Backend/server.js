@@ -41,7 +41,16 @@ app.use(function (err, req, res, next) {
   res.status(500).json({ erro: 'Erro interno no servidor.' });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, function () {
-  console.log('Unitrans API rodando em http://localhost:' + PORT);
-});
+// No Vercel, cada requisição roda a função sob demanda — não existe
+// um processo fixo escutando uma porta. Por isso o app.listen só roda
+// quando o arquivo é executado diretamente (node server.js, local ou
+// em host tradicional tipo Render/Railway). No Vercel, quem importa o
+// "app" é Backend/api/index.js, e este bloco nunca executa.
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, function () {
+    console.log('Unitrans API rodando em http://localhost:' + PORT);
+  });
+}
+
+module.exports = app;

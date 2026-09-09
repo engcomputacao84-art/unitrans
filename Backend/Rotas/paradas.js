@@ -45,4 +45,27 @@ router.patch('/:id/ocorrencia', async function (req, res) {
   }
 });
 
+// PATCH /api/paradas/:id  — body: { ordem?, horaPrevista? }
+// Usado pelo painel da equipe para reordenar/reagendar paradas de uma
+// rota ainda 'pendente' (drag-and-drop / setas na tela de rotas).
+router.patch('/:id', async function (req, res) {
+  try {
+    res.json(await repo.atualizarOrdemHora(req.params.id, req.body));
+  } catch (err) {
+    console.error('[paradas] erro ao atualizar:', err);
+    res.status(500).json({ erro: 'Não foi possível atualizar a parada.' });
+  }
+});
+
+// DELETE /api/paradas/:id — remove a parada da rota e devolve a
+// solicitação pro pool (carga_id = null, status = 'aprovado').
+router.delete('/:id', async function (req, res) {
+  try {
+    res.json(await repo.removerDaCarga(req.params.id));
+  } catch (err) {
+    console.error('[paradas] erro ao remover:', err);
+    res.status(500).json({ erro: 'Não foi possível remover a parada da rota.' });
+  }
+});
+
 module.exports = router;

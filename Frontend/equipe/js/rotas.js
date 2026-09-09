@@ -55,16 +55,15 @@
   Utils.ligarFechamentoModal(rotaModalOverlay, fecharRotaModal);
 
   // =================================================================
-  // CAMADA DE DADOS — RotasService
+  // CAMADA DE DADOS — RotasService — API real (Supabase)
   // -----------------------------------------------------------------
+  // Nesta tela, "rota" e "carga" são a mesma coisa no banco (uma
+  // carga = um caminhão + um motorista numa data; as "paradas" são
+  // as coletas/entregas dela). O id exibido (ex.: C-0512) é o id
+  // numérico da carga formatado.
+  // =================================================================
   var RotasService = (function () {
-    var ROTAS = [
-      { id: 'RT-0512', motorista: 'Carlos Menezes', veiculo: 'Fiorino DVX-3A21', cargaId: 'C-0510', status: 'andamento', data: '2026-08-25' },
-      { id: 'RT-0513', motorista: 'Josiane Ferreira', veiculo: 'DVX-8F02', cargaId: 'C-0508', status: 'concluida', data: '2026-08-24' },
-      { id: 'RT-0514', motorista: 'Paulo Ricardo', veiculo: 'DVX-1C77', cargaId: 'C-0509', status: 'pendente', data: '2026-08-26' },
-      { id: 'RT-0515', motorista: 'Carlos Menezes', veiculo: 'DVX-3A21', cargaId: 'C-0511', status: 'andamento', data: '2026-08-25' },
-      { id: 'RT-0516', motorista: 'Josiane Ferreira', veiculo: 'DVX-8F02', cargaId: 'C-0512', status: 'pendente', data: '2026-08-27' }
-    ];
+    var API_BASE = 'http://localhost:3000/api';
 
     var STATUS_LABEL = {
       andamento: { cls: 'b-andamento', label: 'Em andamento' },
@@ -72,56 +71,10 @@
       pendente: { cls: 'b-pendente', label: 'Não iniciada' }
     };
 
-    var PARADAS = {
-      'RT-0512': [
-        { id: 'p1', endereco: 'Av. Prestes Maia, 1840', cliente: 'Metalúrgica Rio Preto', tipo: 'Coleta', hora: '08:10', done: true },
-        { id: 'p2', endereco: 'Rua Amazonas, 522', cliente: 'Farmácia Bem-Estar', tipo: 'Entrega', hora: '08:35', done: true },
-        { id: 'p3', endereco: 'Av. Onze de Agosto, 2140', cliente: 'Clínica VidaPlus', tipo: 'Entrega', hora: '09:05', done: true },
-        { id: 'p4', endereco: 'Rua Bahia, 355', cliente: 'Confecções Del Rio', tipo: 'Coleta', hora: '09:40', done: false },
-        { id: 'p5', endereco: 'Av. Tancredo Neves, 980', cliente: 'Auto Peças Votupeças', tipo: 'Coleta', hora: '10:15', done: false },
-        { id: 'p6', endereco: 'Rua Ceará, 88', cliente: 'Loja Casa & Cia', tipo: 'Entrega', hora: '10:50', done: false },
-        { id: 'p7', endereco: 'Rod. Euclides da Cunha, km 431', cliente: 'Distribuidora Noroeste', tipo: 'Coleta', hora: '11:30', done: false },
-        { id: 'p8', endereco: 'Rua Bahia, 300', cliente: 'Supermercado Compre Bem', tipo: 'Entrega', hora: '12:05', done: false }
-      ],
-      'RT-0513': [
-        { id: 'p1', endereco: 'Av. Alberto Andaló, 3050', cliente: 'Auto Center Norte', tipo: 'Coleta', hora: '07:40', done: true },
-        { id: 'p2', endereco: 'Rua Voluntário Salles, 900', cliente: 'Farmácia Popular', tipo: 'Entrega', hora: '08:10', done: true },
-        { id: 'p3', endereco: 'Av. Sete de Setembro, 512', cliente: 'Distribuidora Sul', tipo: 'Entrega', hora: '08:45', done: true },
-        { id: 'p4', endereco: 'Rua Piauí, 210', cliente: 'Padaria Trigo Dourado', tipo: 'Coleta', hora: '09:15', done: true },
-        { id: 'p5', endereco: 'Rua Piratininga, 190', cliente: 'Mercado São José', tipo: 'Entrega', hora: '09:50', done: true },
-        { id: 'p6', endereco: 'Av. Bady Bassitt, 1200', cliente: 'Ótica Visão Clara', tipo: 'Entrega', hora: '10:20', done: true }
-      ],
-      'RT-0514': [
-        { id: 'p1', endereco: 'Rua Pernambuco, 77', cliente: 'Papelaria Escreva Bem', tipo: 'Coleta', hora: '08:00', done: false },
-        { id: 'p2', endereco: 'Rod. Washington Luís, km 5', cliente: 'Depósito Constrular', tipo: 'Entrega', hora: '08:40', done: false },
-        { id: 'p3', endereco: 'Rua Amazonas, 700', cliente: 'Loja Moda Jovem', tipo: 'Coleta', hora: '09:10', done: false },
-        { id: 'p4', endereco: 'Av. Alberto Andaló, 4100', cliente: 'Distribuidora Rio Preto Alimentos', tipo: 'Coleta', hora: '09:45', done: false },
-        { id: 'p5', endereco: 'Av. Bady Bassitt, 1500', cliente: 'Clínica Odontológica Sorriso', tipo: 'Entrega', hora: '10:20', done: false },
-        { id: 'p6', endereco: 'Rua Ceará, 400', cliente: 'Livraria Página Um', tipo: 'Entrega', hora: '10:55', done: false },
-        { id: 'p7', endereco: 'Av. Presidente Vargas, 88', cliente: 'Salão Beleza Rio', tipo: 'Entrega', hora: '11:30', done: false }
-      ],
-      'RT-0515': [
-        { id: 'p1', endereco: 'Av. Juscelino Kubitschek, 220', cliente: 'Restaurante Sabor Caseiro', tipo: 'Coleta', hora: '08:05', done: true },
-        { id: 'p2', endereco: 'Rua Marechal Deodoro, 640', cliente: 'Loja Utilidades Lar', tipo: 'Entrega', hora: '08:35', done: true },
-        { id: 'p3', endereco: 'Av. Philadelpho Gouvêa Netto, 1900', cliente: 'Pet Shop Amigo Fiel', tipo: 'Entrega', hora: '09:10', done: false },
-        { id: 'p4', endereco: 'Rua São Paulo, 310', cliente: 'Ótica Novo Olhar', tipo: 'Coleta', hora: '09:45', done: false },
-        { id: 'p5', endereco: 'Av. Danilo Galeazzi, 1500', cliente: 'Mercearia Boa Vista', tipo: 'Entrega', hora: '10:15', done: false }
-      ],
-      'RT-0516': [
-        { id: 'p1', endereco: 'Av. Alberto Andaló, 2900', cliente: 'Loja Modas Elegance', tipo: 'Coleta', hora: '08:00', done: false },
-        { id: 'p2', endereco: 'Rua Bahia, 522', cliente: 'Distribuidora Center Norte', tipo: 'Coleta', hora: '08:35', done: false },
-        { id: 'p3', endereco: 'Rua Amazonas, 970', cliente: 'Farmácia Vida', tipo: 'Entrega', hora: '09:05', done: false },
-        { id: 'p4', endereco: 'Av. Philadelpho Gouvêa Netto, 700', cliente: 'Auto Peças Rio Preto', tipo: 'Coleta', hora: '09:40', done: false },
-        { id: 'p5', endereco: 'Rua Ceará, 210', cliente: 'Confecções Bella', tipo: 'Entrega', hora: '10:15', done: false },
-        { id: 'p6', endereco: 'Av. Tancredo Neves, 1500', cliente: 'Papelaria Central', tipo: 'Entrega', hora: '10:50', done: false },
-        { id: 'p7', endereco: 'Rod. Euclides da Cunha, km 420', cliente: 'Transportadora Vale Verde', tipo: 'Coleta', hora: '11:25', done: false },
-        { id: 'p8', endereco: 'Rua Piauí, 88', cliente: 'Mercadinho São Jorge', tipo: 'Entrega', hora: '12:00', done: false }
-      ]
-    };
-
-    function delay(value, ms) {
-      return new Promise(function (resolve) {
-        setTimeout(function () { resolve(value); }, ms || 200);
+    function tratar(res) {
+      return res.json().then(function (corpo) {
+        if (!res.ok) throw new Error(corpo.erro || 'Erro ao comunicar com a API.');
+        return corpo;
       });
     }
 
@@ -134,39 +87,91 @@
       return dataStr;
     }
 
+    function formatarRotaId(cargaId) {
+      return 'C-' + String(cargaId).padStart(4, '0');
+    }
+
+    // 'C-0512' -> 512
+    function numeroDaCarga(rotaId) {
+      return parseInt(String(rotaId).replace(/\D/g, ''), 10);
+    }
+
+    // 'HH:MM:SS' (ou null) -> 'HH:MM' pro <input type="time">
+    function formatarHora(horaStr) {
+      return horaStr ? horaStr.slice(0, 5) : '';
+    }
+
     return {
       listar: function () {
-        return delay(ROTAS.map(function (r) {
-          return {
-            id: r.id, 
-            motorista: r.motorista, 
-            veiculo: r.veiculo, 
-            cargaId: r.cargaId,
-            status: r.status, 
-            statusInfo: STATUS_LABEL[r.status], 
-            data: r.data,
-            dataFormatada: formatarData(r.data),
-            paradas: (PARADAS[r.id] || []).length
-          };
-        }), 150);
+        return fetch(API_BASE + '/cargas')
+          .then(tratar)
+          .then(function (cargas) {
+            // Cargas ainda em 'montagem' (sem motorista) não são uma
+            // rota de verdade ainda — elas aparecem na tela de Cargas,
+            // não aqui. Só chegam aqui depois de "Gerar rota".
+            return cargas.filter(function (c) { return c.status !== 'montagem'; }).map(function (c) {
+              var rotaId = formatarRotaId(c.id);
+              return {
+                id: rotaId,
+                motorista: c.motoristaLabel || ('Motorista #' + c.motoristaId),
+                veiculo: c.caminhaoLabel || c.caminhaoId,
+                cargaId: rotaId,
+                status: c.status,
+                statusInfo: STATUS_LABEL[c.status] || STATUS_LABEL.pendente,
+                data: c.data,
+                dataFormatada: formatarData(c.data),
+                paradas: (c.paradas || []).length
+              };
+            });
+          });
       },
 
       listarParadas: function (rotaId) {
-        return delay(JSON.parse(JSON.stringify(PARADAS[rotaId] || [])), 150);
+        var cargaId = numeroDaCarga(rotaId);
+        return fetch(API_BASE + '/paradas?cargaId=' + cargaId)
+          .then(tratar)
+          .then(function (paradas) {
+            return paradas.map(function (p) {
+              return {
+                id: p.id,
+                endereco: p.endereco,
+                cliente: p.cliente,
+                tipo: p.tipo === 'coleta' ? 'Coleta' : 'Entrega',
+                hora: formatarHora(p.horaPrevista),
+                done: p.status === 'concluida'
+              };
+            });
+          });
       },
 
-      salvarParadas: function (rotaId, novasParadas) {
-        PARADAS[rotaId] = novasParadas;
-        return delay({ ok: true }, 250);
+      // novasParadas: lista final (nova ordem) das paradas que ficaram
+      // na rota. paradasRemovidas: ids das paradas tiradas da rota
+      // durante a edição (voltam pro pool de solicitações).
+      salvarParadas: function (rotaId, novasParadas, paradasRemovidas) {
+        var atualizacoes = novasParadas.map(function (p, index) {
+          return fetch(API_BASE + '/paradas/' + p.id, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ordem: index + 1, horaPrevista: p.hora ? p.hora + ':00' : null })
+          }).then(tratar);
+        });
+
+        var remocoes = (paradasRemovidas || []).map(function (id) {
+          return fetch(API_BASE + '/paradas/' + id, { method: 'DELETE' }).then(tratar);
+        });
+
+        return Promise.all(atualizacoes.concat(remocoes)).then(function () {
+          return { ok: true };
+        });
       },
 
       excluir: function (rotaId) {
-        var rota = null;
-        for (var i = 0; i < ROTAS.length; i++) {
-          if (ROTAS[i].id === rotaId) { rota = ROTAS[i]; ROTAS.splice(i, 1); break; }
-        }
-        delete PARADAS[rotaId];
-        return delay({ ok: true, cargaId: rota ? rota.cargaId : null }, 250);
+        var cargaId = numeroDaCarga(rotaId);
+        return fetch(API_BASE + '/cargas/' + cargaId, { method: 'DELETE' })
+          .then(function (res) {
+            if (!res.ok) throw new Error('Não foi possível excluir a rota.');
+            return { ok: true, cargaId: rotaId };
+          });
       }
     };
   })();
