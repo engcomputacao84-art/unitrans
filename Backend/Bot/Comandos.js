@@ -4,19 +4,46 @@
    não duplicar a lógica nos dois lugares que usam o bot.
    ========================================================= */
 const { supabaseService: supabase } = require('../Banco/js/supabaseClient');
+const { registrarMenu } = require('./Menu');
 
 function registrarComandos(bot) {
-  bot.onText(/\/start/, (msg) => {
+  bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
-    bot.sendMessage(
-      chatId,
-      'Olá! 🚚 Sou o bot da Unitrans.\n\n' +
-      'Comandos disponíveis:\n' +
-      '/vincular <código> — vincular esta conversa à sua conta (gere o código na tela "Telegram" do sistema)\n' +
-      '/status <código> — consultar o status de uma solicitação\n' +
-      '/ajuda — falar com a nossa equipe'
-    );
+
+    try {
+      const { data: usuario, error } = await supabase
+        .from('usuarios')
+        .select('id')
+        .eq('telegram_chat_id', chatId)
+        .maybeSingle();
+      if (error) throw error;
+
+      const vinculado = !!usuario;
+
+      const mensagem = vinculado
+        ? 'Olá de novo! 🚚 Sua conta já está vinculada.\n\n' +
+          'Comandos disponíveis:\n' +
+          '/menu — abrir o menu\n' +
+          '/ajuda — falar com a nossa equipe'
+        : 'Olá! 🚚 Sou o bot da Unitrans.\n\n' +
+          'Comandos disponíveis:\n' +
+          '/vincular <código> — vincular esta conversa à sua conta (gere o código na tela "Telegram" do sistema)\n' +
+          '/ajuda — falar com a nossa equipe';
+
+      bot.sendMessage(chatId, mensagem);
+    } catch (err) {
+      console.error('Erro ao checar vínculo no /start:', err.message);
+      bot.sendMessage(
+        chatId,
+        'Olá! 🚚 Sou o bot da Unitrans.\n\n' +
+        'Comandos disponíveis:\n' +
+        '/vincular <código> — vincular esta conversa à sua conta\n' +
+        '/ajuda — falar com a nossa equipe'
+      );
+    }
   });
+
+  registrarMenu(bot);
 
   bot.onText(/\/ajuda/, (msg) => {
     const chatId = msg.chat.id;
@@ -78,32 +105,6 @@ function registrarComandos(bot) {
     } catch (err) {
       console.error('Erro ao vincular Telegram:', err.message);
       bot.sendMessage(chatId, 'Deu um erro ao vincular. Tenta de novo em instantes.');
-    }
-  });
-
-  // Exemplo: /status SOL-0001 -> busca no Supabase e responde.
-  bot.onText(/\/status (.+)/, async (msg, match) => {
-    const chatId = msg.chat.id;
-    const codigo = match[1].trim();
-
-    try {
-      const { data, error } = await supabase
-        .from('solicitacoes')
-        .select('*')
-        .eq('id', codigo)
-        .maybeSingle();
-
-      if (error) throw error;
-
-      if (!data) {
-        bot.sendMessage(chatId, 'Não encontrei nenhuma solicitação com o código "' + codigo + '".');
-        return;
-      }
-
-      bot.sendMessage(chatId, 'Solicitação ' + data.id + ': ' + (data.status || 'sem status') + '.');
-    } catch (err) {
-      console.error('Erro ao consultar status:', err.message);
-      bot.sendMessage(chatId, 'Deu um erro ao consultar. Tenta de novo em instantes.');
     }
   });
 
