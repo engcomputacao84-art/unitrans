@@ -145,6 +145,14 @@ window.Sidebar = (function () {
     try {
       sessionStorage.removeItem('unitrans_role');
       sessionStorage.removeItem('unitrans_email');
+      sessionStorage.removeItem('unitrans_nome');
+      // Sem isso os IDs de perfil (cliente/motorista/equipe) ficam
+      // "presos" no localStorage depois do logout e podem vazar pra
+      // uma próxima sessão nesse mesmo navegador (ex.: status de
+      // Telegram de um perfil aparecendo em outro).
+      localStorage.removeItem('unitrans_cliente_id');
+      localStorage.removeItem('unitrans_motorista_id');
+      localStorage.removeItem('unitrans_analista_id');
     } catch (e) {}
     // Sidebar sempre fica um nível abaixo da raiz do Frontend
     // (cliente/, equipe/, motorista/), então o login está sempre em "../".

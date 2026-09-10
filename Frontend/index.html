@@ -413,6 +413,16 @@
   // motorista/rotas.js, equipe/js/solicitacoes.js) já leem hoje.
   function salvarSessao(usuario) {
     try {
+      // Limpa qualquer ID de perfil de uma sessão anterior (mesmo
+      // navegador pode ter feito login como cliente/motorista/equipe
+      // antes) — sem isso, um ID antigo "fantasma" fica no localStorage
+      // e a tela de outro perfil pode ler esse ID errado (ex.: cliente
+      // aparecendo com Telegram vinculado por causa de um login de
+      // motorista anterior nesse mesmo navegador).
+      localStorage.removeItem('unitrans_cliente_id');
+      localStorage.removeItem('unitrans_motorista_id');
+      localStorage.removeItem('unitrans_analista_id');
+
       sessionStorage.setItem('unitrans_role', usuario.tipo === 'C' ? 'cliente' : usuario.tipo === 'M' ? 'motorista' : 'equipe');
       sessionStorage.setItem('unitrans_email', usuario.email);
       sessionStorage.setItem('unitrans_nome', usuario.nome);
