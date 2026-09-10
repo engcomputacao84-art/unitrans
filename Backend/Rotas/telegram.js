@@ -7,6 +7,7 @@ const express = require('express');
 const router = express.Router();
 const TelegramBot = require('node-telegram-bot-api');
 const { registrarComandos } = require('../Bot/Comandos');
+const { aguardar } = require('../Bot/pendente');
 const repo = require('../Repositorios/telegramRepositorio');
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -25,11 +26,17 @@ if (TOKEN) {
   );
 }
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   if (!bot) {
     return res.status(500).json({ erro: 'Bot do Telegram não configurado.' });
   }
+  // bot.processUpdate() dispara o handler (onText/callback_query) e volta
+  // na hora, sem esperar ele terminar. Em serverless, se a gente responde
+  // 200 antes do handler (que é async e mexe no Supabase) terminar, a
+  // função pode ser encerrada no meio do caminho e a resposta pro usuário
+  // nunca sai. Por isso esperamos aguardar() antes de responder.
   bot.processUpdate(req.body);
+  await aguardar();
   res.sendStatus(200);
 });
 

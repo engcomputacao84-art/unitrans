@@ -6,7 +6,7 @@
    ========================================================= */
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
-const { registrarComandos } = require('./comandos');
+const { registrarComandos } = require('./Comandos');
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
