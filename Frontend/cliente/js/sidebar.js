@@ -13,7 +13,12 @@
           page: 'acompanhamento.html',
           text: 'Acompanhar solicitações',
           icon: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>'
-        },
+        }
+      ]
+    },
+    {
+      label: 'Conta',
+      items: [
         {
           page: 'telegram.html',
           text: 'Telegram',
