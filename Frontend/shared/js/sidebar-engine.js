@@ -1,36 +1,4 @@
-/* =========================================================
-   Sidebar — motor de renderização compartilhado por
-   cliente/, equipe/ e motorista/.
 
-   Cada módulo mantém seu próprio js/sidebar.js só com os
-   DADOS (menu, usuário) e chama:
-
-     Sidebar.mount({
-       nav: NAV,                 // itens de menu (obrigatório)
-       defaultPage: 'x.html',    // página assumida na raiz ('/')
-       footer: {                 // rodapé do menu lateral
-         type: 'user',           // avatar + nome + cargo
-         user: { initials, name, role }
-       },
-       // OU
-       footer: {
-         type: 'help',           // bloco de ajuda/whatsapp
-         title: 'Precisa de ajuda?',
-         text: '...',
-         phone: '5517997324060',
-         phoneLabel: '(17) 99732-4060'
-       },
-       // OU (os dois juntos — ex: identidade do cliente + ajuda)
-       footer: [
-         { type: 'user', user: { initials, name, role } },
-         { type: 'help', title: '...', text: '...', phone: '...', phoneLabel: '...' }
-       ],
-       mobileNav: true           // também renderiza <div id="mobile-nav-mount">
-     });
-
-   Requer os elementos `#sidebar-mount` (e `#mobile-nav-mount`
-   quando mobileNav: true) já presentes no HTML da página.
-   ========================================================= */
 window.Sidebar = (function () {
 
   function currentPage(defaultPage) {
