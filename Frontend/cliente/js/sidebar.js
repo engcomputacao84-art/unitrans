@@ -23,11 +23,7 @@
     }
   ];
 
-  var USER = {
-    initials: 'MD',
-    name: 'Marina Duarte',
-    role: 'Cliente · Metalúrgica Rio Preto'
-  };
+  var USER = Sidebar.usuarioDaSessao();
 
   Sidebar.mount({
     nav: NAV,

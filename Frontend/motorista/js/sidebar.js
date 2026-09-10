@@ -28,11 +28,7 @@
     }
   ];
 
-  var USER = {
-    initials: 'CM',
-    name: 'Carlos Menezes',
-    role: 'Motorista · Fiorino DVX-3A21'
-  };
+  var USER = Sidebar.usuarioDaSessao();
 
   Sidebar.mount({
     nav: NAV,

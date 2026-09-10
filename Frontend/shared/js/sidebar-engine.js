@@ -67,6 +67,46 @@ window.Sidebar = (function () {
   /* ---------- Rodapés ---------- */
   var LOGOUT_ICON_PATHS = '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>';
 
+  // Rótulo amigável pro tipo de conta salvo em `unitrans_role`
+  // (setado no login — ver Frontend/index.html).
+  function tipoLabel(role) {
+    switch (role) {
+      case 'cliente': return 'Cliente';
+      case 'motorista': return 'Motorista';
+      case 'equipe': return 'Equipe';
+      default: return role || '';
+    }
+  }
+
+  // Iniciais a partir do nome completo: primeira letra do primeiro
+  // e do último nome (ou as 2 primeiras letras se for um nome só).
+  function iniciais(nome) {
+    var partes = String(nome || '').trim().split(/\s+/).filter(Boolean);
+    if (!partes.length) return '?';
+    if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+    return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+  }
+
+  // Monta o objeto `user` do rodapé a partir do usuário logado
+  // (sessionStorage, gravado no login — ver Frontend/index.html):
+  // nome em cima, "Tipo - email" embaixo.
+  function usuarioDaSessao() {
+    var nome, email, role;
+    try {
+      nome = sessionStorage.getItem('unitrans_nome') || '';
+      email = sessionStorage.getItem('unitrans_email') || '';
+      role = sessionStorage.getItem('unitrans_role') || '';
+    } catch (e) {
+      nome = email = role = '';
+    }
+    var tipo = tipoLabel(role);
+    return {
+      initials: iniciais(nome),
+      name: nome || 'Usuário',
+      role: tipo && email ? tipo + ' - ' + email : (tipo || email || '')
+    };
+  }
+
   function renderFooterUser(user) {
     return '' +
       '<div class="sidebar-foot">' +
@@ -183,5 +223,5 @@ window.Sidebar = (function () {
     }
   }
 
-  return { mount: mount };
+  return { mount: mount, usuarioDaSessao: usuarioDaSessao };
 })();

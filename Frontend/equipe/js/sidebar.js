@@ -56,11 +56,7 @@
     }
   ];
 
-  var USER = {
-    initials: 'RC',
-    name: 'Renata Campos',
-    role: 'Analista de operações'
-  };
+  var USER = Sidebar.usuarioDaSessao();
 
   Sidebar.mount({
     nav: NAV,
