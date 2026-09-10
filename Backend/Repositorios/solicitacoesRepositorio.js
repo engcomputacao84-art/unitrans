@@ -54,7 +54,11 @@ function paraApi(row) {
 
 async function listar(filtros) {
   let query = supabaseService.from('solicitacoes').select(SELECT_SOLICITACAO).order('id', { ascending: false });
-  if (filtros && filtros.status) query = query.eq('status', filtros.status);
+  if (filtros && filtros.status) {
+    // aceita um status só ('pendente') ou uma lista (['em_carga','em_rota']),
+    // útil pra agrupar mais de um status numa mesma "aba" (ex: menu do cliente)
+    query = Array.isArray(filtros.status) ? query.in('status', filtros.status) : query.eq('status', filtros.status);
+  }
   if (filtros && filtros.clienteId) query = query.eq('cliente_id', filtros.clienteId);
 
   const { data, error } = await query;

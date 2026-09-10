@@ -4,50 +4,24 @@
    não duplicar a lógica nos dois lugares que usam o bot.
    ========================================================= */
 const { supabaseService: supabase } = require('../Banco/js/supabaseClient');
-<<<<<<< HEAD
-const { registrarMenu } = require('./Menu');
-=======
-const { registrarMenu, enviarMenuPrincipal } = require('./Menu');
+const { registrarMenu: registrarMenuMotorista, enviarMenuPrincipal: enviarMenuMotorista } = require('./Menu');
+const { registrarMenu: registrarMenuCliente, enviarMenuPrincipal: enviarMenuCliente } = require('./MenuCliente');
 const { marcar } = require('./pendente');
->>>>>>> e356177 (Adicionar projeto Unitrans)
+
+// Abre o menu certo pro chat: tenta motorista, depois cliente. Cada um dos
+// dois já confere sozinho (via tipo em `usuarios`) se o chat é "dele" —
+// aqui só decidimos qual dos dois efetivamente mandou algo. Retorna false
+// se o chat não está vinculado a motorista nem a cliente.
+async function enviarMenuPrincipal(bot, chatId) {
+  const mostrouMotorista = await enviarMenuMotorista(bot, chatId);
+  if (mostrouMotorista) return true;
+  return enviarMenuCliente(bot, chatId);
+}
 
 function registrarComandos(bot) {
-  bot.onText(/\/start/, async (msg) => {
+  bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
 
-<<<<<<< HEAD
-    try {
-      const { data: usuario, error } = await supabase
-        .from('usuarios')
-        .select('id')
-        .eq('telegram_chat_id', chatId)
-        .maybeSingle();
-      if (error) throw error;
-
-      const vinculado = !!usuario;
-
-      const mensagem = vinculado
-        ? 'Olá de novo! 🚚 Sua conta já está vinculada.\n\n' +
-          'Comandos disponíveis:\n' +
-          '/menu — abrir o menu\n' +
-          '/ajuda — falar com a nossa equipe'
-        : 'Olá! 🚚 Sou o bot da Unitrans.\n\n' +
-          'Comandos disponíveis:\n' +
-          '/vincular <código> — vincular esta conversa à sua conta (gere o código na tela "Telegram" do sistema)\n' +
-          '/ajuda — falar com a nossa equipe';
-
-      bot.sendMessage(chatId, mensagem);
-    } catch (err) {
-      console.error('Erro ao checar vínculo no /start:', err.message);
-      bot.sendMessage(
-        chatId,
-        'Olá! 🚚 Sou o bot da Unitrans.\n\n' +
-        'Comandos disponíveis:\n' +
-        '/vincular <código> — vincular esta conversa à sua conta\n' +
-        '/ajuda — falar com a nossa equipe'
-      );
-    }
-=======
     marcar((async () => {
       try {
         const { data: usuario, error } = await supabase
@@ -86,10 +60,31 @@ function registrarComandos(bot) {
         );
       }
     })());
->>>>>>> e356177 (Adicionar projeto Unitrans)
   });
 
-  registrarMenu(bot);
+  // Cada módulo só registra o roteador de callback_query (botões) do seu
+  // próprio menu — não colidem porque usam prefixos diferentes ("m:" e
+  // "c:" em callback_data).
+  registrarMenuMotorista(bot);
+  registrarMenuCliente(bot);
+
+  // /menu — comando de texto centralizado aqui (em vez de duplicado em
+  // Menu.js e MenuCliente.js), decide sozinho se quem pediu é motorista
+  // ou cliente.
+  bot.onText(/\/menu/, (msg) => {
+    const chatId = msg.chat.id;
+    marcar((async () => {
+      try {
+        const mostrou = await enviarMenuPrincipal(bot, chatId);
+        if (!mostrou) {
+          await bot.sendMessage(chatId, 'Esse menu é só pra contas vinculadas. Vincule a sua com /vincular <código> primeiro.');
+        }
+      } catch (err) {
+        console.error('Erro ao abrir menu:', err.message);
+        await bot.sendMessage(chatId, 'Deu um erro ao abrir o menu. Tenta de novo em instantes.');
+      }
+    })());
+  });
 
   bot.onText(/\/ajuda/, (msg) => {
     const chatId = msg.chat.id;
@@ -153,17 +148,7 @@ function registrarComandos(bot) {
         console.error('Erro ao vincular Telegram:', err.message);
         await bot.sendMessage(chatId, 'Deu um erro ao vincular. Tenta de novo em instantes.');
       }
-<<<<<<< HEAD
-
-      const nome = usuario.nome ? ', ' + usuario.nome : '';
-      bot.sendMessage(chatId, '✅ Conta vinculada com sucesso' + nome + '! A partir de agora você recebe seus avisos por aqui.');
-    } catch (err) {
-      console.error('Erro ao vincular Telegram:', err.message);
-      bot.sendMessage(chatId, 'Deu um erro ao vincular. Tenta de novo em instantes.');
-    }
-=======
     })());
->>>>>>> e356177 (Adicionar projeto Unitrans)
   });
 
   // Log simples de qualquer mensagem recebida (útil pra debugar).

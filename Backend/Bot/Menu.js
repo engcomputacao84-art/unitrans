@@ -1,4 +1,4 @@
-/* =========================================================
+/* ---------------------------------------------------------
    Menu.js — menu de botões (inline keyboard) do bot pro
    MOTORISTA, navegado via callback_query.
    ---------------------------------------------------------
@@ -9,14 +9,11 @@
 
    callback_data usa prefixo "m:" pra não colidir com outros
    callbacks que o bot possa vir a ter no futuro.
-   ========================================================= */
+   --------------------------------------------------------- */
 const { supabaseService: supabase } = require('../Banco/js/supabaseClient');
 const cargasRepo = require('../Repositorios/cargasRepositorio');
 const paradasRepo = require('../Repositorios/paradasRepositorio');
-<<<<<<< HEAD
-=======
 const { marcar } = require('./pendente');
->>>>>>> e356177 (Adicionar projeto Unitrans)
 
 const ICONE_TIPO = { coleta: '📦', entrega: '🏁' };
 const ICONE_STATUS_PARADA = { pendente: '⬜', concluida: '✅', ocorrencia: '⚠️' };
@@ -56,18 +53,12 @@ function telaPrincipal() {
     texto: '🏠 *Menu principal*\n\nO que você quer ver?',
     teclado: [
       [{ text: '📦 Cargas', callback_data: 'm:cargas' }],
-<<<<<<< HEAD
-      [{ text: '🛣️ Rota', callback_data: 'm:rota' }]
-=======
       [{ text: '🛣️ Rota', callback_data: 'm:rota' }],
       [{ text: '❓ Ajuda', callback_data: 'm:ajuda' }]
->>>>>>> e356177 (Adicionar projeto Unitrans)
     ]
   };
 }
 
-<<<<<<< HEAD
-=======
 function telaAjuda() {
   return {
     texto: '❓ *Ajuda*\n\nNossa equipe já foi avisada e vai te responder em breve!',
@@ -75,7 +66,6 @@ function telaAjuda() {
   };
 }
 
->>>>>>> e356177 (Adicionar projeto Unitrans)
 function telaCargas() {
   return {
     texto: '📦 *Cargas*',
@@ -246,10 +236,7 @@ async function resolverTela(dado, motorista) {
   const partes = dado.split(':'); // ex: ['m','carga','12','det']
 
   if (dado === 'm:home') return telaPrincipal();
-<<<<<<< HEAD
-=======
   if (dado === 'm:ajuda') return telaAjuda();
->>>>>>> e356177 (Adicionar projeto Unitrans)
   if (dado === 'm:cargas') return telaCargas();
   if (dado === 'm:cargas:dia') return telaCargasDoDia(motorista.id);
   if (dado === 'm:rota') return telaRota();
@@ -267,26 +254,6 @@ async function resolverTela(dado, motorista) {
   return null;
 }
 
-<<<<<<< HEAD
-function registrarMenu(bot) {
-  bot.onText(/\/menu/, async (msg) => {
-    const chatId = msg.chat.id;
-    try {
-      const motorista = await buscarMotoristaPorChat(chatId);
-      if (!motorista) {
-        bot.sendMessage(chatId, 'Esse menu é só pra motoristas vinculados. Vincule sua conta com /vincular <código> primeiro.');
-        return;
-      }
-      const tela = telaPrincipal();
-      bot.sendMessage(chatId, tela.texto, { parse_mode: 'Markdown', reply_markup: { inline_keyboard: tela.teclado } });
-    } catch (err) {
-      console.error('Erro ao abrir menu:', err.message);
-      bot.sendMessage(chatId, 'Deu um erro ao abrir o menu. Tenta de novo em instantes.');
-    }
-  });
-
-  bot.on('callback_query', async (query) => {
-=======
 // Manda o menu principal pro chat, se ele for de um motorista vinculado.
 // Retorna true se mandou o menu, false se não é motorista (chamador decide
 // o que fazer nesse caso). Reaproveitado pelo /menu e pelo /start.
@@ -299,60 +266,17 @@ async function enviarMenuPrincipal(bot, chatId) {
   return true;
 }
 
+// Registra só o roteador de callback_query (botões) do menu do motorista.
+// O comando de texto /menu é centralizado em Comandos.js, que decide se
+// quem digitou é motorista ou cliente e chama o enviarMenuPrincipal certo.
 function registrarMenu(bot) {
-  bot.onText(/\/menu/, (msg) => {
-    const chatId = msg.chat.id;
-    marcar((async () => {
-      try {
-        const mostrou = await enviarMenuPrincipal(bot, chatId);
-        if (!mostrou) {
-          await bot.sendMessage(chatId, 'Esse menu é só pra motoristas vinculados. Vincule sua conta com /vincular <código> primeiro.');
-        }
-      } catch (err) {
-        console.error('Erro ao abrir menu:', err.message);
-        await bot.sendMessage(chatId, 'Deu um erro ao abrir o menu. Tenta de novo em instantes.');
-      }
-    })());
-  });
-
   bot.on('callback_query', (query) => {
->>>>>>> e356177 (Adicionar projeto Unitrans)
     const dado = query.data || '';
     if (!dado.startsWith('m:')) return; // não é um callback deste menu
 
     const chatId = query.message.chat.id;
     const messageId = query.message.message_id;
 
-<<<<<<< HEAD
-    try {
-      const motorista = await buscarMotoristaPorChat(chatId);
-      if (!motorista) {
-        bot.answerCallbackQuery(query.id, { text: 'Vincule sua conta primeiro (/vincular <código>).', show_alert: true });
-        return;
-      }
-
-      const tela = await resolverTela(dado, motorista);
-      if (!tela) {
-        bot.answerCallbackQuery(query.id);
-        return;
-      }
-
-      await bot.editMessageText(tela.texto, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: 'Markdown',
-        reply_markup: { inline_keyboard: tela.teclado }
-      });
-      bot.answerCallbackQuery(query.id);
-    } catch (err) {
-      console.error('Erro ao navegar no menu:', err.message);
-      bot.answerCallbackQuery(query.id, { text: 'Deu um erro. Tenta de novo.', show_alert: true });
-    }
-  });
-}
-
-module.exports = { registrarMenu };
-=======
     marcar((async () => {
       try {
         const motorista = await buscarMotoristaPorChat(chatId);
@@ -383,4 +307,3 @@ module.exports = { registrarMenu };
 }
 
 module.exports = { registrarMenu, enviarMenuPrincipal };
->>>>>>> e356177 (Adicionar projeto Unitrans)
